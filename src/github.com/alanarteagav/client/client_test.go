@@ -1,35 +1,120 @@
 package client
 
-import "testing"
+import (
+    "testing"
+    "os"
+    "flag"
+    "net"
+    "log"
+    "bufio"
+    "strconv"
+    "strings"
+    "math/rand"
+)
 
-func TestNewStudent(t *testing.T)  {
-    t.Error("TestNewStudent FAILED")
+func aleatoryPort() int {
+    rand.Seed(113)
+    return rand.Intn(2000) + 1000
 }
 
-func TestSetUsername(t *testing.T) {
-    t.Error("TestSetUsername FAILED")
+var chatServer testServer
+var stringChannel chan string
+var port int
+
+//A small server to test our client
+type testServer struct {
+    port       int
+    guests     []net.Conn
+    connection net.Conn
+    listener   net.Listener
 }
 
+//Creates a new testServer
+func newTestServer(port int) *testServer {
+    server := new(testServer)
+    listener, err := net.Listen("tcp", "localhost:" + strconv.Itoa(port))
+    if err != nil {
+        log.Fatalln(err)
+    }
+    server.guests = make([]net.Conn, 1)
+    server.listener = listener
+    return server
+}
+
+//Serves
+func (ts testServer) serve(stringChannel chan string){
+    for {
+        connection, err := ts.listener.Accept()
+        if err != nil {
+            log.Fatalln(err)
+        }
+        ts.guests = append(ts.guests, connection)
+        go ts.handle(connection)
+    }
+}
+
+//Delivers the messages
+func (ts testServer) handle(connection net.Conn) {
+    for {
+        message, err := bufio.NewReader(connection).ReadString('\n')
+        if err != nil {
+            log.Fatalln(err)
+        }
+        for _, guest := range ts.guests {
+            if guest != nil {
+                guest.Write([]byte(message + "\n"))
+            }
+        }
+    }
+}
+
+func TestMain(m *testing.M) {
+    port = aleatoryPort()
+    chatServer := *newTestServer(port)
+    stringChannel = make(chan string)
+    go chatServer.serve(stringChannel)
+    flag.Parse()
+    runTests := m.Run()
+    os.Exit(runTests)
+}
+
+func TestNewClient(t *testing.T) {
+    username := "NAME"
+    client := NewClient(username, "localhost", port)
+    if username != client.GetUsername(){
+        t.Error("TestNewClient FAILED")
+    }
+}
+
+func TestSetGetUsername(t *testing.T) {
+    username := "NAME"
+    client := NewClient(username, "localhost", port)
+    newUsername := "NEW_NAME"
+    client.SetUsername(newUsername)
+    if newUsername != client.GetUsername(){
+        t.Error("TestSetGetUsername FAILED")
+    }
+}
+
+//Tests if the client recieves messages from the server
 func TestListen(t *testing.T) {
-    t.Error("TestListen FAILED")
+    message := "LISTEN!"
+    senderClient := NewClient("", "localhost", port)
+    senderClient.SendMessage(message)
+    echo := Listen(senderClient.GetConnection())
+    echo = strings.Trim(message, "\n")
+    if echo != message {
+        t.Error("TestListen FAILED")
+    }
 }
 
-func TestRead(t *testing.T) {
-    t.Error("TestRead FAILED")
-}
-
-func TestWrite(t *testing.T) {
-    t.Error("TestWrite FAILED")
-}
-
-func TestLogIn(t *testing.T)  {
-    t.Error("TestLogIn FAILED")
-}
-
-func TestLogOut(t *testing.T) {
-    t.Error("TestLogOut FAILED")
-}
-
-func TestAskForChatroom(t *testing.T) {
-    t.Error("TestAskForChatroom FAILED")
+func TestSendMessage(t *testing.T) {
+    client := NewClient("", "localhost", port)
+    message := "SHAZAM!"
+    client.SendMessage(message)
+    echo := Listen(client.GetConnection())
+    echo = strings.Trim(echo, "\n")
+    if message != echo {
+        t.Error("TestSendMessage FAILED")
+    }
 }
