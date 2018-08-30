@@ -1,20 +1,39 @@
 package client
 
+import "net"
+
 type Client struct {
-    username string
+    username    string
+    ipAdress    string
+    port        int
+    connection  net.Conn
 }
 
-func (c Client) Connect(port string) {
-
+func NewClient(username string, ipAdress string, port int) *Client {
+    client := new(Client)
+    return client
 }
 
-func (c Client) Listen(stringChannel chan string) {
+func (client Client) GetUsername() string {
+    return ""
 }
 
-func (c Client) Read() {
-
+func (client *Client) SetUsername(username string) {
+    client.username = username
 }
 
-func (c Client) Write() {
+func (client Client) GetConnection() net.Conn {
+    return client.connection
+}
+
+func (client *Client) SetConnection(connection net.Conn) {
+    client.connection = connection
+}
+
+func Listen(connection net.Conn) string {
+    return ""
+}
+
+func (client Client) SendMessage(message string)  {
 
 }
