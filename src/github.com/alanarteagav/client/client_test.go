@@ -2,109 +2,119 @@ package client
 
 import (
     "testing"
-    "time"
+    "os"
+    "flag"
     "net"
     "log"
     "bufio"
     "strconv"
     "strings"
+    "math/rand"
 )
 
-//A small server to test our client
-type testServer struct { port int }
-
-func (ts testServer) deliverMessage(connection net.Conn) {
-    message := "beep"
-    connection.Write([]byte(message + "\n"))
+func aleatoryPort() int {
+    rand.Seed(113)
+    return rand.Intn(2000) + 1000
 }
 
-func (ts testServer) serve(stringChannel chan string){
-    listener, err := net.Listen("tcp", ":" + strconv.Itoa(ts.port))
+var chatServer testServer
+var stringChannel chan string
+var port int
+
+//A small server to test our client
+type testServer struct {
+    port       int
+    guests     []net.Conn
+    connection net.Conn
+    listener   net.Listener
+}
+
+//Creates a new testServer
+func newTestServer(port int) *testServer {
+    server := new(testServer)
+    listener, err := net.Listen("tcp", "localhost:" + strconv.Itoa(port))
     if err != nil {
-        log.Println("Error: can't listen through port")
+        log.Fatalln(err)
     }
+    server.guests = make([]net.Conn, 1)
+    server.listener = listener
+    return server
+}
+
+//Serves
+func (ts testServer) serve(stringChannel chan string){
     for {
-        connection, err := listener.Accept()
+        connection, err := ts.listener.Accept()
         if err != nil {
             log.Fatalln(err)
         }
-        username, _ := bufio.NewReader(connection).ReadString('\n')
-
-        go ts.deliverMessage(connection)
-
-        stringChannel <- username
+        ts.guests = append(ts.guests, connection)
+        go ts.handle(connection)
     }
 }
 
-server := testServer{ 3000 }
-
-func (ts testServer) sendMessage()  {
-
+//Delivers the messages
+func (ts testServer) handle(connection net.Conn) {
+    for {
+        message, err := bufio.NewReader(connection).ReadString('\n')
+        if err != nil {
+            log.Fatalln(err)
+        }
+        for _, guest := range ts.guests {
+            if guest != nil {
+                guest.Write([]byte(message + "\n"))
+            }
+        }
+    }
 }
 
+func TestMain(m *testing.M) {
+    port = aleatoryPort()
+    chatServer := *newTestServer(port)
+    stringChannel = make(chan string)
+    go chatServer.serve(stringChannel)
+    flag.Parse()
+    runTests := m.Run()
+    os.Exit(runTests)
+}
 
-func TestSetUsername(t *testing.T) {
-    t.Error("TestSetUsername FAILED")
+func TestNewClient(t *testing.T) {
+    username := "NAME"
+    client := NewClient(username, "localhost", port)
+    if username != client.GetUsername(){
+        t.Error("TestNewClient FAILED")
+    }
+}
+
+func TestSetGetUsername(t *testing.T) {
+    username := "NAME"
+    client := NewClient(username, "localhost", port)
+    newUsername := "NEW_NAME"
+    client.SetUsername(newUsername)
+    if newUsername != client.GetUsername(){
+        t.Error("TestSetGetUsername FAILED")
+    }
 }
 
 //Tests if the client recieves messages from the server
-//The test fails if it takes more than two seconds
 func TestListen(t *testing.T) {
-
-    server := testServer{ 3000 }
-    client := Client{ "clientName" }
-    stringChannel := make(chan string)
-    messageChannel := make(chan string)
-
-    go server.serve(stringChannel)
-
-    select {
-    case <- stringChannel:
-        client.Connect(strconv.Itoa(3000))
-        client.Listen(messageChannel)
-        message := <- messageChannel
-        message = strings.Trim(message, "\n")
-        if message != "beep" {
-            t.Error("TestListen FAILED")
-        }
-    case <-time.After(2 * time.Second):
-        t.Fatal("timeout")
+    message := "LISTEN!"
+    senderClient := NewClient("", "localhost", port)
+    senderClient.SendMessage(message)
+    echo := Listen(senderClient.GetConnection())
+    echo = strings.Trim(message, "\n")
+    if echo != message {
+        t.Error("TestListen FAILED")
     }
 }
 
-func TestRead(t *testing.T) {
-    t.Error("TestRead FAILED")
-}
-
-func TestWrite(t *testing.T) {
-    t.Error("TestWrite FAILED")
-}
-
-//Tests when the client connects to the server
-//The test fails if it takes more than two seconds
-func TestLogIn(t *testing.T)  {
-
-    server := testServer{ 3000 }
-    client := Client{ "clientName" }
-    stringChannel := make(chan string)
-    go server.serve(stringChannel)
-    select {
-    case <- stringChannel:
-        client.Connect(strconv.Itoa(3000))
-        id := <- stringChannel
-        id = strings.Trim(id, "\n")
-        if id != "clientName" {
-            t.Error("TestLogIn FAILED")
-        }
-    case <-time.After(2 * time.Second):
-        t.Fatal("timeout")
+func TestSendMessage(t *testing.T) {
+    client := NewClient("", "localhost", port)
+    message := "SHAZAM!"
+    client.SendMessage(message)
+    echo := Listen(client.GetConnection())
+    echo = strings.Trim(echo, "\n")
+    if message != echo {
+        t.Error("TestSendMessage FAILED")
     }
-}
-
-func TestLogOut(t *testing.T) {
-    t.Error("TestLogOut FAILED")
-}
-
-func TestAskForChatroom(t *testing.T) {
-    t.Error("TestAskForChatroom FAILED")
 }
