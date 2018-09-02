@@ -21,7 +21,7 @@ var chatServer testServer
 var stringChannel chan string
 var port int
 
-//A small server to test our client
+// A small server to test our client
 type testServer struct {
     port       int
     guests     []net.Conn
@@ -29,7 +29,7 @@ type testServer struct {
     listener   net.Listener
 }
 
-//Creates a new testServer
+// Creates a new testServer
 func newTestServer(port int) *testServer {
     server := new(testServer)
     listener, err := net.Listen("tcp", "localhost:" + strconv.Itoa(port))
@@ -41,7 +41,7 @@ func newTestServer(port int) *testServer {
     return server
 }
 
-//Serves
+// Serves
 func (ts testServer) serve(stringChannel chan string){
     for {
         connection, err := ts.listener.Accept()
@@ -53,7 +53,7 @@ func (ts testServer) serve(stringChannel chan string){
     }
 }
 
-//Delivers the messages
+// Delivers the messages
 func (ts testServer) handle(connection net.Conn) {
     for {
         message, err := bufio.NewReader(connection).ReadString('\n')
@@ -68,6 +68,7 @@ func (ts testServer) handle(connection net.Conn) {
     }
 }
 
+// Code to execute before running the unit tests.
 func TestMain(m *testing.M) {
     port = aleatoryPort()
     chatServer := *newTestServer(port)
@@ -78,6 +79,7 @@ func TestMain(m *testing.M) {
     os.Exit(runTests)
 }
 
+// Tests client constructor.
 func TestNewClient(t *testing.T) {
     username := "NAME"
     client := NewClient(username, "localhost", port)
@@ -86,6 +88,7 @@ func TestNewClient(t *testing.T) {
     }
 }
 
+// Tests if the client's username can be modified.
 func TestSetGetUsername(t *testing.T) {
     username := "NAME"
     client := NewClient(username, "localhost", port)
@@ -96,7 +99,7 @@ func TestSetGetUsername(t *testing.T) {
     }
 }
 
-//Tests if the client recieves messages from the server
+// Tests if the client receives messages from the server.
 func TestListen(t *testing.T) {
     message := "LISTEN!"
     senderClient := NewClient("", "localhost", port)
@@ -108,6 +111,7 @@ func TestListen(t *testing.T) {
     }
 }
 
+// Tests if the client sends messages to the server.
 func TestSendMessage(t *testing.T) {
     client := NewClient("", "localhost", port)
     message := "SHAZAM!"
