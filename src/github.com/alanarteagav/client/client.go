@@ -1,6 +1,14 @@
 package client
 
-import "net"
+import (
+    "net"
+    "fmt"
+    "bufio"
+    "strconv"
+    "strings"
+    "os"
+    "log"
+)
 
 type Client struct {
     username    string
@@ -11,11 +19,20 @@ type Client struct {
 
 func NewClient(username string, ipAdress string, port int) *Client {
     client := new(Client)
+    client.username = username
+    connection, err := net.Dial("tcp", ipAdress +  ":" + strconv.Itoa(port))
+    if err != nil {
+        log.Fatalln(err)
+        fmt.Println("Unable to connect to server")
+    }
+    client.ipAdress = ipAdress
+    client.port = port
+    client.connection = connection
     return client
 }
 
 func (client Client) GetUsername() string {
-    return ""
+    return client.username
 }
 
 func (client *Client) SetUsername(username string) {
@@ -31,9 +48,17 @@ func (client *Client) SetConnection(connection net.Conn) {
 }
 
 func Listen(connection net.Conn) string {
-    return ""
+    for {
+        message, err := bufio.NewReader(connection).ReadString('\n')
+        message = strings.Trim(message, "\n")
+        if err != nil{
+            fmt.Println("The server is off")
+            os.Exit(1)
+        }
+        return message
+    }
 }
 
 func (client Client) SendMessage(message string)  {
-
+    client.connection.Write([]byte(message + "\n"))
 }
