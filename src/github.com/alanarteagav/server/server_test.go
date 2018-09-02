@@ -82,6 +82,25 @@ func TestMain(m *testing.M) {
     os.Exit(runTests)
 }
 
+func TestNewGuest(t *testing.T) {
+    username := "TEST_USERNAME"
+    guest := NewGuest(username, nil)
+
+    if guest.GetUsername() != username {
+        t.Error("TestNewGuest FAILED")
+    }
+}
+
+func TestGuestSetGetUsername(t *testing.T) {
+    usernameA := "TEST_USERNAME_A"
+    guest := NewGuest(usernameA, nil)
+    usernameB := "TEST_USERNAME_B"
+    guest.SetUsername(usernameB)
+    if guest.GetUsername() != usernameB {
+        t.Error("TestGuestSetGetUsername FAILED")
+    }
+}
+
 func TestLogIn(t *testing.T) {
     logInSignal := strings.Trim(tClient.getMessage(), "\n")
     tClient.sendMessage("TEST_CLIENT" + "\n")
