@@ -2,18 +2,28 @@ package server
 
 import "net"
 
+// Guest struct (auxiliar for server).
+// Defines an username, and the guest connection
+// (golang's equivalent for sockets).
 type Guest struct {
-
+    username   string
+    connection net.Conn
 }
 
-func NewGuest(name string, connection net.Conn) *Guest {
-    return new(Guest)
+// Guest constructor.
+func NewGuest(username string, connection net.Conn) *Guest {
+    guest := new(Guest)
+    guest.username = username
+    guest.connection = connection
+    return guest
 }
 
+// Returns guest's username.
 func (guest Guest) GetUsername() string {
-    return ""
+    return guest.username
 }
 
+// Sets a new username for the guest.
 func (guest Guest) SetUsername(username string) {
-
+    guest.username = username
 }
