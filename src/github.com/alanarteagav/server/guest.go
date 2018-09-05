@@ -24,6 +24,6 @@ func (guest Guest) GetUsername() string {
 }
 
 // Sets a new username for the guest.
-func (guest Guest) SetUsername(username string) {
+func (guest *Guest) SetUsername(username string) {
     guest.username = username
 }
