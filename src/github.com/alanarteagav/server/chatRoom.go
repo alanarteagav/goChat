@@ -8,29 +8,34 @@ type ChatRoom struct {
 
 func NewChatRoom(name string) *ChatRoom {
     chatRoom := new(ChatRoom)
+    chatRoom.connectionCount = 0
+    chatRoom.name = name
+    chatRoom.guests = make(map[string]Guest)
     return chatRoom
 }
 
 func (chatRoom ChatRoom) GetName() string {
-    return ""
+    return chatRoom.name
 }
 
 func (chatRoom *ChatRoom) SetName(name string) {
-
+    chatRoom.name = name
 }
 
 func (chatRoom ChatRoom) GetConnectionCount() int {
-    return 0
+    return chatRoom.connectionCount
 }
 
 func (chatRoom ChatRoom) GetGuests() map[string]Guest {
-    return nil
+    return chatRoom.guests
 }
 
 func (chatRoom *ChatRoom) AddGuest(guest Guest) {
-
+    chatRoom.connectionCount++
+    chatRoom.guests[guest.GetUsername()] = guest
 }
 
 func (chatRoom *ChatRoom) RemoveGuest(guest Guest) {
-
+    chatRoom.connectionCount--
+    delete(chatRoom.guests, guest.GetUsername())
 }
