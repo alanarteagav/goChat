@@ -39,3 +39,7 @@ func (chatRoom *ChatRoom) RemoveGuest(guest Guest) {
     chatRoom.connectionCount--
     delete(chatRoom.guests, guest.GetUsername())
 }
+
+func (chatRoom *ChatRoom) Equals(cr *ChatRoom) bool {
+    return false
+}
