@@ -30,3 +30,34 @@ Once you are in the goChat directory, simply run this command:
 ```
 go test ./...
 ```
+
+## Running client and server
+
+If you are in the goChat directory, run:
+```
+./bin/goServer
+```
+to run the server.
+
+And:
+```
+./bin/goClient
+```
+to run the client.
+
+## Generating Documentation
+
+To generate documentation, run:
+```
+godoc -http=:8080
+```
+where '8080' is the port in which the computer will open a server to
+show the documentation.
+
+Then, open your web browser and type in your address bar the following
+address:
+```
+http://localhost:6060/pkg/github.com/alanarteagav/
+```
+(you can also click in the following link )
+[goChat documentation](http://localhost:6060/pkg/github.com/alanarteagav/)
