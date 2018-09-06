@@ -82,6 +82,7 @@ func TestMain(m *testing.M) {
     os.Exit(runTests)
 }
 
+// Guest Constructor test.
 func TestNewGuest(t *testing.T) {
     username := "TEST_USERNAME"
     guest := NewGuest(username, nil)
@@ -91,6 +92,7 @@ func TestNewGuest(t *testing.T) {
     }
 }
 
+// Tests if the guest's username can be modified.
 func TestGuestSetGetUsername(t *testing.T) {
     usernameA := "TEST_USERNAME_A"
     guest := NewGuest(usernameA, nil)
@@ -101,6 +103,7 @@ func TestGuestSetGetUsername(t *testing.T) {
     }
 }
 
+// Tests if the server can accept a client.
 func TestLogIn(t *testing.T) {
     logInSignal := strings.Trim(tClient.getMessage(), "\n")
     tClient.sendMessage("TEST_CLIENT" + "\n")
@@ -109,18 +112,41 @@ func TestLogIn(t *testing.T) {
     }
 }
 
+// Tests if the server sends a message to a specific client.
 func TestSendMessage(t *testing.T) {
+    guestConn, client := net.Pipe()
     message := "TEST_MESSAGE"
-    <-time.After(1 * time.Second)
-    tClient.sendMessage("MESSAGE")
-    <-time.After(1 * time.Second)
-    tClient.sendMessage(message)
-    receivedMessage := strings.Trim(tClient.getMessage(), "\n")
+    guest := *NewGuest("TEST_GUEST", guestConn)
+    go func ()  {
+        sendMessage(message, guest)
+        guestConn.Close()
+    }()
+    receivedMessage, _ := bufio.NewReader(client).ReadString('\n')
+    receivedMessage = strings.Trim(receivedMessage, "\n")
+    client.Close()
     if receivedMessage != message {
         t.Error("TestSendMessage FAILED")
     }
 }
 
+// Tests if the server sends an event to a specific client.
+func TestSendEvent(t *testing.T) {
+    guestConn, client := net.Pipe()
+    event := events.UNDEFINED
+    guest := *NewGuest("TEST_GUEST", guestConn)
+    go func ()  {
+        sendEvent(event, guest)
+        guestConn.Close()
+    }()
+    receivedMessage, _ := bufio.NewReader(client).ReadString('\n')
+    receivedEvent := events.ToChatEvent(strings.Trim(receivedMessage, "\n"))
+    client.Close()
+    if receivedEvent != event {
+        t.Error("TestSendEvent FAILED")
+    }
+}
+
+// Tests if the server delivers messages to the clients.
 func TestDeliverMessage(t *testing.T) {
     tClient2 := *newClient(aleatoryPort())
     tClient2.sendMessage("TEST_CLIENT_2" + "\n")
