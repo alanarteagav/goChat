@@ -41,5 +41,16 @@ func (chatRoom *ChatRoom) RemoveGuest(guest Guest) {
 }
 
 func (chatRoom *ChatRoom) Equals(cr *ChatRoom) bool {
-    return false
+    if chatRoom.name != cr.name {
+        return false
+    } else if chatRoom.connectionCount != cr.connectionCount {
+        return false
+    }
+    for guestKey , guestsValue := range chatRoom.guests {
+        guest := cr.guests[guestKey]
+        if !guest.Equals(&guestsValue) {
+            return false
+        }
+    }
+    return true
 }
