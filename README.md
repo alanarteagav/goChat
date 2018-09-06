@@ -60,6 +60,4 @@ address:
 http://localhost:6060/pkg/github.com/alanarteagav/
 ```
 
-(you can also click the following link)
-http://localhost:6060/pkg/github.com/alanarteagav/ - goChat documentation.
 [goChat documentation](http://localhost:6060/pkg/github.com/alanarteagav/)
