@@ -103,6 +103,54 @@ func TestGuestSetGetUsername(t *testing.T) {
     }
 }
 
+// Tests if the guest is in a ChatRoom.
+func TestGuestIsInChatroom(t *testing.T) {
+    username := "TEST_USERNAME"
+    guest := NewGuest(username, nil)
+    chatRoom := NewChatRoom("TEST_CHATROOM")
+    if guest.IsInChatRoom(*chatRoom) {
+        t.Error("TestGuestIsInChatroom FAILED")
+    }
+    guest.JoinChatRoom(*chatRoom)
+    if !guest.IsInChatRoom(*chatRoom) {
+        t.Error("TestGuestIsInChatroom FAILED")
+    }
+}
+
+// Tests if the guest can join a chatRoom.
+func TestGuestJoinChatroom(t *testing.T) {
+    username := "TEST_USERNAME"
+    guest := NewGuest(username, nil)
+    chatRoom := NewChatRoom("TEST_CHATROOM")
+    guest.JoinChatRoom(*chatRoom)
+    if !guest.IsInChatRoom(*chatRoom) {
+        t.Error("TestGuestJoinChatroom FAILED")
+    }
+}
+
+// Tests if the guest can leave a chatRoom.
+func TestGuestLeaveChatroom(t *testing.T) {
+    username := "TEST_USERNAME"
+    guest := NewGuest(username, nil)
+    chatRoom := NewChatRoom("TEST_CHATROOM")
+    guest.JoinChatRoom(*chatRoom)
+    guest.LeaveChatRoom(*chatRoom)
+    if guest.IsInChatRoom(*chatRoom) {
+        t.Error("TestGuestLeaveChatroom FAILED")
+    }
+}
+
+func TestGuestEquals(t *testing.T) {
+    guest := NewGuest("GUEST", nil)
+    guestA := NewGuest("GUEST", nil)
+    guestB := NewGuest("GUEST_B", nil)
+    if guest.Equals(guestB) {
+        t.Error("TestGuestEquals FAILED")
+    } else if !guest.Equals(guestA) {
+        t.Error("TestGuestEquals FAILED")
+    }
+}
+
 // ChatRoom Constructor test.
 func TestNewChatRoom(t *testing.T) {
     name := "TEST_NAME"
@@ -162,6 +210,26 @@ func TestChatRoomRemoveGuest(t *testing.T) {
     chatRoom.RemoveGuest(*guestB)
     if chatRoom.GetConnectionCount() != 0 {
         t.Error("TestChatRoomRemoveGuest FAILED")
+    }
+}
+
+func TestChatRoomEquals(t *testing.T) {
+    chatRoom := NewChatRoom("TEST_CHATROOM")
+    chatRoomA := NewChatRoom("TEST_CHATROOM")
+    chatRoomB := NewChatRoom("TEST_CHATROOM_B")
+    chatRoomC := NewChatRoom("TEST_CHATROOM_C")
+    guest1 := NewGuest("GUEST_A", nil)
+    guest2 := NewGuest("GUEST_B", nil)
+    chatRoom.AddGuest(*guest1)
+    chatRoomA.AddGuest(*guest1)
+    chatRoomB.AddGuest(*guest2)
+    chatRoomC.AddGuest(*guest1)
+    if chatRoom.Equals(chatRoomB) {
+        t.Error("TestChatRoomEquals FAILED")
+    }else if chatRoom.Equals(chatRoomC) {
+        t.Error("TestChatRoomEquals FAILED")
+    } else if !chatRoom.Equals(chatRoomA) {
+        t.Error("TestChatRoomEquals FAILED")
     }
 }
 
