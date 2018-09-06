@@ -18,12 +18,17 @@ func NewGuest(username string, connection net.Conn) *Guest {
     return guest
 }
 
+// Returns guest's connection.
+func (guest Guest) GetConnection() net.Conn {
+    return guest.connection
+}
+
 // Returns guest's username.
 func (guest Guest) GetUsername() string {
     return guest.username
 }
 
 // Sets a new username for the guest.
-func (guest Guest) SetUsername(username string) {
+func (guest *Guest) SetUsername(username string) {
     guest.username = username
 }
