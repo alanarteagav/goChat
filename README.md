@@ -59,5 +59,5 @@ address:
 ```
 http://localhost:6060/pkg/github.com/alanarteagav/
 ```
-
+(you can also click in the following link )
 [goChat documentation](http://localhost:6060/pkg/github.com/alanarteagav/)
