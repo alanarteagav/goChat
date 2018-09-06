@@ -8,6 +8,7 @@ import "net"
 type Guest struct {
     username   string
     connection net.Conn
+    chatRooms  map[string]ChatRoom
 }
 
 // Guest constructor.
@@ -31,4 +32,24 @@ func (guest Guest) GetUsername() string {
 // Sets a new username for the guest.
 func (guest *Guest) SetUsername(username string) {
     guest.username = username
+}
+
+func (guest Guest) JoinChatRoom(chatRoom ChatRoom) bool {
+    return false
+}
+
+func (guest Guest) LeaveChatRoom(chatRoom ChatRoom) bool {
+    return false
+}
+
+func (guest Guest) GetChatRooms() map[string]ChatRoom {
+    return nil
+}
+
+func (guest Guest) IsInChatRoom(chatRoom ChatRoom) bool {
+    return false
+}
+
+func (guest Guest) Equals(g *Guest) bool {
+    return false
 }
