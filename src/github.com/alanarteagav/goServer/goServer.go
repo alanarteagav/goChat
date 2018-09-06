@@ -1,3 +1,4 @@
+// Main file for goServer program.
 package main
 
 import (
@@ -22,8 +23,6 @@ func main()  {
         os.Exit(0)
     }
     server := server.NewServer(port)
-    fmt.Println("[Launching server ...........]")
-    fmt.Println("[Listening in the port : " + portString + "]")
 
     signals := make(chan os.Signal, 1)
     quitSignal := make(chan bool, 1)
@@ -38,6 +37,8 @@ func main()  {
     }()
 
     go server.Serve()
+    fmt.Println("[Launching server ...........]")
+    fmt.Println("[Listening in the port : " + portString + "]")
 
     <- quitSignal
     fmt.Println("[Signal received, closing server ... ]")
