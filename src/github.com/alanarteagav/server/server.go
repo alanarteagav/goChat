@@ -99,8 +99,7 @@ func (server Server) handleConnection(guest *Guest)  {
 
 // Serves.
 func (server Server) Serve()  {
-    listener, err := net.Listen("tcp",
-                                "localhost:" + strconv.Itoa(server.port))
+    listener, err := net.Listen("tcp", ":" + strconv.Itoa(server.port))
     if err != nil {
         log.Fatalln(err)
     }
