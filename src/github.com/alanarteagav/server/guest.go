@@ -16,6 +16,7 @@ func NewGuest(username string, connection net.Conn) *Guest {
     guest := new(Guest)
     guest.username = username
     guest.connection = connection
+    guest.chatRooms = make(map[string]ChatRoom)
     return guest
 }
 
@@ -34,12 +35,18 @@ func (guest *Guest) SetUsername(username string) {
     guest.username = username
 }
 
-func (guest Guest) JoinChatRoom(chatRoom ChatRoom) bool {
-    return false
+func (guest Guest) JoinChatRoom(chatRoom ChatRoom) {
+    _, isInChatRooms := guest.chatRooms[chatRoom.GetName()]
+    if !isInChatRooms {
+        guest.chatRooms[chatRoom.GetName()] = chatRoom
+    }
 }
 
-func (guest Guest) LeaveChatRoom(chatRoom ChatRoom) bool {
-    return false
+func (guest Guest) LeaveChatRoom(chatRoom ChatRoom) {
+    guestChatRoom, isInChatRooms := guest.chatRooms[chatRoom.GetName()]
+    if isInChatRooms {
+        delete(guest.chatRooms, guestChatRoom.GetName())
+    }
 }
 
 func (guest Guest) GetChatRooms() map[string]ChatRoom {
@@ -47,9 +54,13 @@ func (guest Guest) GetChatRooms() map[string]ChatRoom {
 }
 
 func (guest Guest) IsInChatRoom(chatRoom ChatRoom) bool {
-    return false
+    _, isInChatRooms := guest.chatRooms[chatRoom.GetName()]
+    return isInChatRooms
 }
 
 func (guest Guest) Equals(g *Guest) bool {
-    return false
+    if guest.username != g.username {
+        return false
+    }
+    return true
 }
