@@ -103,6 +103,68 @@ func TestGuestSetGetUsername(t *testing.T) {
     }
 }
 
+// ChatRoom Constructor test.
+func TestNewChatRoom(t *testing.T) {
+    name := "TEST_NAME"
+    chatRoom := NewChatRoom(name)
+    if chatRoom.GetName() != name {
+        t.Error("TestNewChatRoom FAILED")
+    }
+    if chatRoom.GetConnectionCount() != 0 {
+        t.Error("TestNewChatRoom FAILED")
+    }
+}
+
+// Tests if the ChatRoom's username can be modified.
+func TestChatRoomSetGetName(t *testing.T) {
+    nameA := "TEST_NAME_A"
+    chatRoom := NewChatRoom(nameA)
+    nameB := "TEST_NAME_B"
+    chatRoom.SetName(nameB)
+    if chatRoom.GetName() != nameB {
+        t.Error("TestChatRoomSetGetUsername FAILED")
+    }
+}
+
+// Tests if the ChatRoom can accept a guest.
+func TestChatRoomAddGuest(t *testing.T) {
+    chatRoom := NewChatRoom("TEST_CHATROOM")
+    guestA := NewGuest("GUEST_A", nil)
+    chatRoom.AddGuest(*guestA)
+    if chatRoom.GetConnectionCount() != 1 {
+        t.Error("TestChatRoomAddGuest FAILED")
+    }
+}
+
+// Tests the ChatRoom connection counter.
+func TestChatRoomGetConnectionCount(t *testing.T) {
+    chatRoom := NewChatRoom("TEST_CHATROOM")
+    guestA := NewGuest("GUEST_A", nil)
+    guestB := NewGuest("GUEST_B", nil)
+    chatRoom.AddGuest(*guestA)
+    chatRoom.AddGuest(*guestB)
+    if chatRoom.GetConnectionCount() != 2 {
+        t.Error("TestChatRoomGetConnectionCount FAILED")
+    }
+}
+
+// Tests if the ChatRoom can remove a guest.
+func TestChatRoomRemoveGuest(t *testing.T) {
+    chatRoom := NewChatRoom("TEST_CHATROOM")
+    guestA := NewGuest("GUEST_A", nil)
+    guestB := NewGuest("GUEST_B", nil)
+    chatRoom.AddGuest(*guestA)
+    chatRoom.AddGuest(*guestB)
+    chatRoom.RemoveGuest(*guestA)
+    if chatRoom.GetConnectionCount() != 1 {
+        t.Error("TestChatRoomRemoveGuest FAILED")
+    }
+    chatRoom.RemoveGuest(*guestB)
+    if chatRoom.GetConnectionCount() != 0 {
+        t.Error("TestChatRoomRemoveGuest FAILED")
+    }
+}
+
 // Tests if the server can accept a client.
 func TestLogIn(t *testing.T) {
     logInSignal := strings.Trim(tClient.getMessage(), "\n")
