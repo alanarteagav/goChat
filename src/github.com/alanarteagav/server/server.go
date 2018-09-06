@@ -11,11 +11,14 @@ import (
     "strconv"
 )
 
+// Server struct.
+// Defines the server's port, and a dictionary of guests.
 type Server struct {
     port                int
     guestsDictionary    map[string]Guest
 }
 
+// Server constructor.
 func NewServer(port int) *Server {
     server := new(Server)
     server.port = port
@@ -23,6 +26,7 @@ func NewServer(port int) *Server {
     return server
 }
 
+// Returns server's port.
 func (server Server) GetPort() int {
     return server.port
 }
@@ -37,7 +41,7 @@ func listen(connection net.Conn) (string, error) {
     return message, nil
 }
 
-//Server method, sends a message to a guest.
+// Server method, sends a message to a guest.
 func sendEvent(event events.ChatEvent, guest Guest) {
     guest.GetConnection().Write([]byte(event + "\n"))
 }
@@ -57,6 +61,7 @@ func (server Server) deliverMessage(message string) {
     }
 }
 
+// Auxiliar method which listens strings from a guest.
 func (server Server) listen(guest *Guest) (string, error) {
     message, err := bufio.NewReader(guest.GetConnection()).ReadString('\n')
     if err != nil {
@@ -68,6 +73,7 @@ func (server Server) listen(guest *Guest) (string, error) {
     return message, nil
 }
 
+// Handles a particular guest connection.
 func (server Server) handleConnection(guest *Guest)  {
     for {
         message, err := server.listen(guest)
@@ -91,6 +97,7 @@ func (server Server) handleConnection(guest *Guest)  {
     }
 }
 
+// Serves.
 func (server Server) Serve()  {
     listener, err := net.Listen("tcp",
                                 "localhost:" + strconv.Itoa(server.port))
