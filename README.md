@@ -30,3 +30,17 @@ Once you are in the goChat directory, simply run this command:
 ```
 go test ./...
 ```
+
+## Running client and server
+
+If you are in the goChat directory, run:
+```
+./bin/goServer
+```
+to run the server.
+
+And:
+```
+./bin/goClient
+```
+to run the client.
