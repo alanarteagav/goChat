@@ -8,7 +8,6 @@ import (
     "math/rand"
     "net"
     "strings"
-    "time"
     "os"
     "testing"
 )
@@ -84,29 +83,29 @@ func TestMain(m *testing.M) {
 
 // Guest Constructor test.
 func TestNewGuest(t *testing.T) {
-    username := "TEST_USERNAME"
-    guest := NewGuest(username, nil)
-
-    if guest.GetUsername() != username {
+    testSerial := randomSerial()
+    guest := NewGuest(testSerial, nil)
+    if guest.GetSerial() != testSerial {
+        t.Error("TestNewGuest FAILED")
+    }
+    if guest.GetUsername() != "" {
         t.Error("TestNewGuest FAILED")
     }
 }
 
 // Tests if the guest's username can be modified.
 func TestGuestSetGetUsername(t *testing.T) {
-    usernameA := "TEST_USERNAME_A"
-    guest := NewGuest(usernameA, nil)
-    usernameB := "TEST_USERNAME_B"
-    guest.SetUsername(usernameB)
-    if guest.GetUsername() != usernameB {
+    guest := NewGuest(randomSerial(), nil)
+    username := "TEST_USERNAME"
+    guest.SetUsername(username)
+    if guest.GetUsername() != username {
         t.Error("TestGuestSetGetUsername FAILED")
     }
 }
 
 // Tests if the guest is in a ChatRoom.
 func TestGuestIsInChatroom(t *testing.T) {
-    username := "TEST_USERNAME"
-    guest := NewGuest(username, nil)
+    guest := NewGuest(randomSerial(), nil)
     chatRoom := NewChatRoom("TEST_CHATROOM")
     if guest.IsInChatRoom(*chatRoom) {
         t.Error("TestGuestIsInChatroom FAILED")
@@ -119,8 +118,7 @@ func TestGuestIsInChatroom(t *testing.T) {
 
 // Tests if the guest can join a chatRoom.
 func TestGuestJoinChatroom(t *testing.T) {
-    username := "TEST_USERNAME"
-    guest := NewGuest(username, nil)
+    guest := NewGuest(randomSerial(), nil)
     chatRoom := NewChatRoom("TEST_CHATROOM")
     guest.JoinChatRoom(*chatRoom)
     if !guest.IsInChatRoom(*chatRoom) {
@@ -130,8 +128,7 @@ func TestGuestJoinChatroom(t *testing.T) {
 
 // Tests if the guest can leave a chatRoom.
 func TestGuestLeaveChatroom(t *testing.T) {
-    username := "TEST_USERNAME"
-    guest := NewGuest(username, nil)
+    guest := NewGuest(randomSerial(), nil)
     chatRoom := NewChatRoom("TEST_CHATROOM")
     guest.JoinChatRoom(*chatRoom)
     guest.LeaveChatRoom(*chatRoom)
@@ -141,9 +138,13 @@ func TestGuestLeaveChatroom(t *testing.T) {
 }
 
 func TestGuestEquals(t *testing.T) {
-    guest := NewGuest("GUEST", nil)
-    guestA := NewGuest("GUEST", nil)
-    guestB := NewGuest("GUEST_B", nil)
+    testSerial := randomSerial()
+    guest := NewGuest(testSerial, nil)
+    guest.SetUsername("A")
+    guestA := NewGuest(testSerial, nil)
+    guestA.SetUsername("A")
+    guestB := NewGuest(randomSerial(), nil)
+    guestB.SetUsername("B")
     if guest.Equals(guestB) {
         t.Error("TestGuestEquals FAILED")
     } else if !guest.Equals(guestA) {
@@ -177,8 +178,8 @@ func TestChatRoomSetGetName(t *testing.T) {
 // Tests if the ChatRoom can accept a guest.
 func TestChatRoomAddGuest(t *testing.T) {
     chatRoom := NewChatRoom("TEST_CHATROOM")
-    guestA := NewGuest("GUEST_A", nil)
-    chatRoom.AddGuest(*guestA)
+    guest := NewGuest(randomSerial(), nil)
+    chatRoom.AddGuest(*guest)
     if chatRoom.GetConnectionCount() != 1 {
         t.Error("TestChatRoomAddGuest FAILED")
     }
@@ -187,8 +188,8 @@ func TestChatRoomAddGuest(t *testing.T) {
 // Tests the ChatRoom connection counter.
 func TestChatRoomGetConnectionCount(t *testing.T) {
     chatRoom := NewChatRoom("TEST_CHATROOM")
-    guestA := NewGuest("GUEST_A", nil)
-    guestB := NewGuest("GUEST_B", nil)
+    guestA := NewGuest(randomSerial(), nil)
+    guestB := NewGuest(randomSerial(), nil)
     chatRoom.AddGuest(*guestA)
     chatRoom.AddGuest(*guestB)
     if chatRoom.GetConnectionCount() != 2 {
@@ -199,8 +200,8 @@ func TestChatRoomGetConnectionCount(t *testing.T) {
 // Tests if the ChatRoom can remove a guest.
 func TestChatRoomRemoveGuest(t *testing.T) {
     chatRoom := NewChatRoom("TEST_CHATROOM")
-    guestA := NewGuest("GUEST_A", nil)
-    guestB := NewGuest("GUEST_B", nil)
+    guestA := NewGuest(randomSerial(), nil)
+    guestB := NewGuest(randomSerial(), nil)
     chatRoom.AddGuest(*guestA)
     chatRoom.AddGuest(*guestB)
     chatRoom.RemoveGuest(*guestA)
@@ -218,8 +219,8 @@ func TestChatRoomEquals(t *testing.T) {
     chatRoomA := NewChatRoom("TEST_CHATROOM")
     chatRoomB := NewChatRoom("TEST_CHATROOM_B")
     chatRoomC := NewChatRoom("TEST_CHATROOM_C")
-    guest1 := NewGuest("GUEST_A", nil)
-    guest2 := NewGuest("GUEST_B", nil)
+    guest1 := NewGuest(randomSerial(), nil)
+    guest2 := NewGuest(randomSerial(), nil)
     chatRoom.AddGuest(*guest1)
     chatRoomA.AddGuest(*guest1)
     chatRoomB.AddGuest(*guest2)
@@ -233,20 +234,11 @@ func TestChatRoomEquals(t *testing.T) {
     }
 }
 
-// Tests if the server can accept a client.
-func TestLogIn(t *testing.T) {
-    logInSignal := strings.Trim(tClient.getMessage(), "\n")
-    tClient.sendMessage("TEST_CLIENT" + "\n")
-    if events.ToChatEvent(logInSignal) != events.LOG_IN {
-        t.Error("TestLogIn FAILED")
-    }
-}
-
 // Tests if the server sends a message to a specific client.
 func TestSendMessage(t *testing.T) {
     guestConn, client := net.Pipe()
     message := "TEST_MESSAGE"
-    guest := *NewGuest("TEST_GUEST", guestConn)
+    guest := *NewGuest(randomSerial(), guestConn)
     go func ()  {
         sendMessage(message, guest)
         guestConn.Close()
@@ -263,7 +255,7 @@ func TestSendMessage(t *testing.T) {
 func TestSendEvent(t *testing.T) {
     guestConn, client := net.Pipe()
     event := events.UNDEFINED
-    guest := *NewGuest("TEST_GUEST", guestConn)
+    guest := *NewGuest(randomSerial(), guestConn)
     go func ()  {
         sendEvent(event, guest)
         guestConn.Close()
@@ -273,27 +265,5 @@ func TestSendEvent(t *testing.T) {
     client.Close()
     if receivedEvent != event {
         t.Error("TestSendEvent FAILED")
-    }
-}
-
-// Tests if the server delivers messages to the clients.
-func TestDeliverMessage(t *testing.T) {
-    tClient2 := *newClient(aleatoryPort())
-    tClient2.sendMessage("TEST_CLIENT_2" + "\n")
-    tClient2.getMessage()
-
-    message := "TEST_DELIVER"
-    <-time.After(1 * time.Second)
-    tClient2.sendMessage("MESSAGE")
-    <-time.After(1 * time.Second)
-    tClient2.sendMessage(message)
-
-    receivedMessage1 := strings.Trim(tClient.getMessage(), "\n")
-    receivedMessage2 := strings.Trim(tClient2.getMessage(), "\n")
-
-    if receivedMessage1 != receivedMessage2 {
-        t.Error("TestDeliverMessage FAILED")
-    } else if  receivedMessage1 != message {
-        t.Error("TestDeliverMessage FAILED")
     }
 }
