@@ -9,6 +9,7 @@ type ChatEvent string
 const (
     USERS  ChatEvent = "USERS"
     STATUS  ChatEvent = "STATUS"
+    INVITE ChatEvent = "INVITE"
     MESSAGE ChatEvent = "MESSAGE"
     IDENTIFY  ChatEvent = "IDENTIFY"
     JOINROOM ChatEvent = "JOINROOM"
@@ -28,6 +29,8 @@ func ToChatEvent(str string) ChatEvent {
         return USERS
     case "STATUS":
         return STATUS
+    case "INVITE":
+        return INVITE
     case "MESSAGE":
         return MESSAGE
     case "IDENTIFY":
@@ -42,7 +45,7 @@ func ToChatEvent(str string) ChatEvent {
         return ROOMESSAGE
     case "PUBLICMESSAGE":
         return PUBLICMESSAGE
-        
+
     case "ERROR":
         return ERROR
     default:
