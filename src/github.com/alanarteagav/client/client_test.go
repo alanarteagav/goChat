@@ -8,7 +8,7 @@ import (
     "log"
     "bufio"
     "strconv"
-    "strings"
+    //"strings"
     "math/rand"
 )
 
@@ -99,6 +99,7 @@ func TestSetGetUsername(t *testing.T) {
     }
 }
 
+/*
 // Tests if the client receives messages from the server.
 func TestListen(t *testing.T) {
     message := "LISTEN!"
@@ -111,6 +112,7 @@ func TestListen(t *testing.T) {
     }
 }
 
+
 // Tests if the client sends messages to the server.
 func TestSendMessage(t *testing.T) {
     client := NewClient("", "localhost", port)
@@ -122,3 +124,4 @@ func TestSendMessage(t *testing.T) {
         t.Error("TestSendMessage FAILED")
     }
 }
+*/
