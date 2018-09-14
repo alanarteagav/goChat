@@ -10,7 +10,30 @@ type Guest struct {
     username   string
     connection net.Conn
     chatRooms  map[string]ChatRoom
+    status UserStatus
 }
+
+type UserStatus string
+const (
+    BUSY UserStatus = "BUSY"
+    AWAY  UserStatus = "AWAY"
+    ACTIVE  UserStatus = "ACTIVE"
+    UNDEFINED  UserStatus = "UNDEFINED"
+)
+
+func ToUserStatus(str string) UserStatus {
+    switch str {
+    case "BUSY":
+        return BUSY
+    case "AWAY":
+        return AWAY
+    case "ACTIVE":
+        return ACTIVE
+    default:
+        return UNDEFINED
+    }
+}
+
 
 // Guest constructor.
 func NewGuest(serial int, connection net.Conn) *Guest {
@@ -19,6 +42,7 @@ func NewGuest(serial int, connection net.Conn) *Guest {
     guest.username = ""
     guest.connection = connection
     guest.chatRooms = make(map[string]ChatRoom)
+    guest.status = ACTIVE
     return guest
 }
 
@@ -40,6 +64,15 @@ func (guest Guest) GetUsername() string {
 // Sets a new username for the guest.
 func (guest *Guest) SetUsername(username string) {
     guest.username = username
+}
+
+func (guest *Guest) SetStatus(status UserStatus) {
+    guest.status = status
+}
+
+// Sets a new username for the guest.
+func (guest Guest) GetStatus() UserStatus {
+    return guest.status
 }
 
 func (guest Guest) JoinChatRoom(chatRoom ChatRoom) {
