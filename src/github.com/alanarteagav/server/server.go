@@ -6,23 +6,28 @@ import (
     "github.com/alanarteagav/events"
     "fmt"
     "log"
+    "math/rand"
     "net"
     "strings"
     "strconv"
 )
 
+func randomSerial() int {
+    return rand.Int()
+}
+
 // Server struct.
 // Defines the server's port, and a dictionary of guests.
 type Server struct {
-    port                int
-    guestsDictionary    map[string]Guest
+    port        int
+    guestsById  map[int]Guest
 }
 
 // Server constructor.
 func NewServer(port int) *Server {
     server := new(Server)
     server.port = port
-    server.guestsDictionary = make(map[string]Guest)
+    server.guestsById = make(map[int]Guest)
     return server
 }
 
@@ -54,7 +59,7 @@ func sendMessage(message string, guest Guest) {
 // Auxiliar function which send messages to all the guests in the
 // guest dictionary.
 func (server Server) deliverMessage(message string) {
-    for _ , guest := range server.guestsDictionary {
+    for _ , guest := range server.guestsById {
         if &guest != nil {
             sendMessage(message, guest)
         }
@@ -66,7 +71,7 @@ func (server Server) listen(guest *Guest) (string, error) {
     message, err := bufio.NewReader(guest.GetConnection()).ReadString('\n')
     if err != nil {
         fmt.Println("[Client : " + guest.GetUsername() + " disconnected]")
-        delete(server.guestsDictionary, guest.GetUsername())
+        delete(server.guestsById, guest.GetSerial())
         return "", errors.New("Client out")
     }
     message = strings.Trim(message, "\n")
@@ -108,14 +113,18 @@ func (server Server) Serve()  {
         if err != nil {
             log.Fatalln(err)
         }
-        connection.Write([]byte(events.LOG_IN + "\n"))
-        username, err := listen(connection)
-        if err != nil {
-            log.Fatalln(err)
+        guestSerial := randomSerial()
+        for {
+            if _, ok := server.guestsById[guestSerial]; ok {
+                guestSerial = randomSerial()
+            } else {
+                break
+            }
         }
-        fmt.Println("[ " + username + " has logged in ]")
-        guest := NewGuest(username, connection)
-        server.guestsDictionary[username] = *guest
+        guest := NewGuest(guestSerial, connection)
+        server.guestsById[guestSerial] = *guest
+        serialString := strconv.Itoa(guestSerial)
+        fmt.Println("[ NEW CLIENT WITH ID " + serialString + " HAS LOGGED IN ]")
         go server.handleConnection(guest)
     }
 }
