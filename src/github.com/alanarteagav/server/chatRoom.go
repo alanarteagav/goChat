@@ -18,6 +18,10 @@ func NewChatRoom(owner Guest, name string) *ChatRoom {
     return chatRoom
 }
 
+func (chatRoom ChatRoom) GetOwner() *Guest {
+    return new(Guest)
+}
+
 func (chatRoom ChatRoom) GetName() string {
     return chatRoom.name
 }
@@ -34,16 +38,20 @@ func (chatRoom ChatRoom) GetGuests() map[string]Guest {
     return chatRoom.guests
 }
 
+func (chatRoom ChatRoom) Hosts(guest *Guest) bool {
+    return false
+}
+
 func (chatRoom *ChatRoom) AddGuest(guest Guest) {
     chatRoom.connectionCount++
     chatRoom.guests[guest.GetUsername()] = guest
 }
 
-func (chatRoom *ChatRoom) AddInvitedGuest(guest Guest) {
+func (chatRoom *ChatRoom) AddInvitedGuest(owner Guest, guest *Guest) {
 
 }
 
-func (chatRoom ChatRoom) WasInvited(guest Guest) bool {
+func (chatRoom ChatRoom) WasInvited(guest *Guest) bool {
     return false
 }
 
