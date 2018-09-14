@@ -81,6 +81,9 @@ func TestMain(m *testing.M) {
     os.Exit(runTests)
 }
 
+
+/* TESTS FOR THE GUEST STRUCT */
+
 // Guest Constructor test.
 func TestNewGuest(t *testing.T) {
     testSerial := randomSerial()
@@ -151,6 +154,8 @@ func TestGuestEquals(t *testing.T) {
         t.Error("TestGuestEquals FAILED")
     }
 }
+
+/* TESTS FOR THE CHATROOM STRUCT */
 
 // ChatRoom Constructor test.
 func TestNewChatRoom(t *testing.T) {
@@ -233,6 +238,8 @@ func TestChatRoomEquals(t *testing.T) {
         t.Error("TestChatRoomEquals FAILED")
     }
 }
+
+/* TESTS FOR THE SERVER STRUCT */
 
 // Tests if the server sends a message to a specific client.
 func TestSendMessage(t *testing.T) {
