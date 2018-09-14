@@ -61,6 +61,11 @@ func (guest Guest) GetUsername() string {
     return guest.username
 }
 
+// Returns guest's username.
+func (guest Guest) IsIdentified() bool {
+    return guest.username != ""
+}
+
 // Sets a new username for the guest.
 func (guest *Guest) SetUsername(username string) {
     guest.username = username
