@@ -1,17 +1,25 @@
 package server
 
 type ChatRoom struct {
+    owner            Guest
     name             string
     connectionCount  int
     guests           map[string]Guest
+    invitedGuests    map[string]Guest
 }
 
-func NewChatRoom(name string) *ChatRoom {
+func NewChatRoom(owner Guest, name string) *ChatRoom {
     chatRoom := new(ChatRoom)
+    chatRoom.owner = owner
     chatRoom.connectionCount = 0
     chatRoom.name = name
     chatRoom.guests = make(map[string]Guest)
+    chatRoom.invitedGuests = make(map[string]Guest)
     return chatRoom
+}
+
+func (chatRoom ChatRoom) GetOwner() *Guest {
+    return new(Guest)
 }
 
 func (chatRoom ChatRoom) GetName() string {
@@ -30,9 +38,21 @@ func (chatRoom ChatRoom) GetGuests() map[string]Guest {
     return chatRoom.guests
 }
 
+func (chatRoom ChatRoom) Hosts(guest *Guest) bool {
+    return false
+}
+
 func (chatRoom *ChatRoom) AddGuest(guest Guest) {
     chatRoom.connectionCount++
     chatRoom.guests[guest.GetUsername()] = guest
+}
+
+func (chatRoom *ChatRoom) AddInvitedGuest(owner Guest, guest *Guest) {
+
+}
+
+func (chatRoom ChatRoom) WasInvited(guest *Guest) bool {
+    return false
 }
 
 func (chatRoom *ChatRoom) RemoveGuest(guest Guest) {

@@ -47,21 +47,16 @@ func listen(connection net.Conn) (string, error) {
 }
 
 // Server method, sends a message to a guest.
-func sendEvent(event events.ChatEvent, guest Guest) {
-    guest.GetConnection().Write([]byte(event + "\n"))
-}
-
-// Server method, sends a message to a guest.
-func sendMessage(message string, guest Guest) {
+func send(message string, guest Guest) {
     guest.GetConnection().Write([]byte(message + "\n"))
 }
 
 // Auxiliar function which send messages to all the guests in the
 // guest dictionary.
-func (server Server) deliverMessage(message string) {
+func (server Server) deliver(message string) {
     for _ , guest := range server.guestsById {
         if &guest != nil {
-            sendMessage(message, guest)
+            send(message, guest)
         }
     }
 }
@@ -87,17 +82,8 @@ func (server Server) handleConnection(guest *Guest)  {
         }
         event := events.ToChatEvent(message)
         switch event {
-            case events.MESSAGE:
-                messageIn, err := server.listen(guest)
-                if err != nil{
-                    return
-                }
-                server.deliverMessage(messageIn)
-                fmt.Println("[ MESSAGE " + messageIn + " ]")
-            case events.UNDEFINED:
-                fmt.Println("[UNDEFINED EVENT]")
-            case events.ERROR:
-                fmt.Println("[ERROR!]")
+        default :
+            send("NOT A VALID EVENT", *guest)
         }
     }
 }

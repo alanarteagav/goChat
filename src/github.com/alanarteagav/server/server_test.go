@@ -13,7 +13,9 @@ import (
 )
 
 var chatServer Server
-var tClient testClient
+var clientA testClient
+var clientB testClient
+var ownerGuest Guest
 
 //Function that returns an aleatoryPort.
 func aleatoryPort() int {
@@ -75,11 +77,16 @@ func (client testClient) getEvent() events.ChatEvent {
 func TestMain(m *testing.M) {
     chatServer = *NewServer(aleatoryPort())
     go chatServer.Serve()
-    tClient = *newClient(aleatoryPort())
+    ownerGuest = *NewGuest(randomSerial(), nil)
+    clientB = *newClient(aleatoryPort())
+    clientB.sendMessage("IDENTIFY Kenobi")
     flag.Parse()
     runTests := m.Run()
     os.Exit(runTests)
 }
+
+
+/* TESTS FOR THE GUEST STRUCT */
 
 // Guest Constructor test.
 func TestNewGuest(t *testing.T) {
@@ -103,10 +110,26 @@ func TestGuestSetGetUsername(t *testing.T) {
     }
 }
 
+func TestGuestSetGetStatus(t *testing.T) {
+    guest := NewGuest(randomSerial(), nil)
+    guest.SetStatus(BUSY)
+    if guest.GetStatus() != BUSY {
+        t.Error("TestGuestSetGetStatus FAILED")
+    }
+    guest.SetStatus(AWAY)
+    if guest.GetStatus() != AWAY {
+        t.Error("TestGuestSetGetStatus FAILED")
+    }
+    guest.SetStatus(ACTIVE)
+    if guest.GetStatus() != ACTIVE {
+        t.Error("TestGuestSetGetStatus FAILED")
+    }
+}
+
 // Tests if the guest is in a ChatRoom.
 func TestGuestIsInChatroom(t *testing.T) {
     guest := NewGuest(randomSerial(), nil)
-    chatRoom := NewChatRoom("TEST_CHATROOM")
+    chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     if guest.IsInChatRoom(*chatRoom) {
         t.Error("TestGuestIsInChatroom FAILED")
     }
@@ -119,7 +142,7 @@ func TestGuestIsInChatroom(t *testing.T) {
 // Tests if the guest can join a chatRoom.
 func TestGuestJoinChatroom(t *testing.T) {
     guest := NewGuest(randomSerial(), nil)
-    chatRoom := NewChatRoom("TEST_CHATROOM")
+    chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     guest.JoinChatRoom(*chatRoom)
     if !guest.IsInChatRoom(*chatRoom) {
         t.Error("TestGuestJoinChatroom FAILED")
@@ -129,7 +152,7 @@ func TestGuestJoinChatroom(t *testing.T) {
 // Tests if the guest can leave a chatRoom.
 func TestGuestLeaveChatroom(t *testing.T) {
     guest := NewGuest(randomSerial(), nil)
-    chatRoom := NewChatRoom("TEST_CHATROOM")
+    chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     guest.JoinChatRoom(*chatRoom)
     guest.LeaveChatRoom(*chatRoom)
     if guest.IsInChatRoom(*chatRoom) {
@@ -152,14 +175,20 @@ func TestGuestEquals(t *testing.T) {
     }
 }
 
+/* TESTS FOR THE CHATROOM STRUCT */
+
 // ChatRoom Constructor test.
 func TestNewChatRoom(t *testing.T) {
     name := "TEST_NAME"
-    chatRoom := NewChatRoom(name)
-    if chatRoom.GetName() != name {
+    guest := NewGuest(randomSerial(), nil)
+    chatRoom := NewChatRoom(ownerGuest, name)
+    if !guest.Equals(chatRoom.GetOwner()) {
         t.Error("TestNewChatRoom FAILED")
-    }
-    if chatRoom.GetConnectionCount() != 0 {
+    } else if chatRoom.GetName() != name {
+        t.Error("TestNewChatRoom FAILED")
+    } else if !chatRoom.Hosts(guest){
+        t.Error("TestNewChatRoom FAILED")
+    }else if chatRoom.GetConnectionCount() != 1 {
         t.Error("TestNewChatRoom FAILED")
     }
 }
@@ -167,7 +196,7 @@ func TestNewChatRoom(t *testing.T) {
 // Tests if the ChatRoom's username can be modified.
 func TestChatRoomSetGetName(t *testing.T) {
     nameA := "TEST_NAME_A"
-    chatRoom := NewChatRoom(nameA)
+    chatRoom := NewChatRoom(ownerGuest, nameA)
     nameB := "TEST_NAME_B"
     chatRoom.SetName(nameB)
     if chatRoom.GetName() != nameB {
@@ -176,94 +205,335 @@ func TestChatRoomSetGetName(t *testing.T) {
 }
 
 // Tests if the ChatRoom can accept a guest.
+func TestChatRoomAddInvitedGuest(t *testing.T) {
+    chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
+    invitedGuest := NewGuest(randomSerial(), nil)
+    notOwnerGuest := *NewGuest(randomSerial(), nil)
+    if chatRoom.WasInvited(invitedGuest) {
+        t.Error("TestChatRoomAddInvitedGuest FAILED")
+    }
+    chatRoom.AddInvitedGuest(notOwnerGuest, invitedGuest)
+    if chatRoom.WasInvited(invitedGuest) {
+        t.Error("TestChatRoomAddInvitedGuest FAILED")
+    }
+    chatRoom.AddInvitedGuest(ownerGuest, invitedGuest)
+    if !chatRoom.WasInvited(invitedGuest) {
+        t.Error("TestChatRoomAddInvitedGuest FAILED")
+    }
+}
+
+// Tests if the ChatRoom can accept a guest.
 func TestChatRoomAddGuest(t *testing.T) {
-    chatRoom := NewChatRoom("TEST_CHATROOM")
-    guest := NewGuest(randomSerial(), nil)
-    chatRoom.AddGuest(*guest)
-    if chatRoom.GetConnectionCount() != 1 {
+    chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
+    invitedGuest := NewGuest(randomSerial(), nil)
+    chatRoom.AddGuest(*invitedGuest)
+    if chatRoom.Hosts(invitedGuest) || chatRoom.GetConnectionCount() != 1 {
+        t.Error("TestChatRoomAddGuest FAILED")
+    }
+    chatRoom.AddInvitedGuest(ownerGuest, invitedGuest)
+    chatRoom.AddGuest(*invitedGuest)
+    if !chatRoom.Hosts(invitedGuest) || chatRoom.GetConnectionCount() != 2 {
         t.Error("TestChatRoomAddGuest FAILED")
     }
 }
 
 // Tests the ChatRoom connection counter.
 func TestChatRoomGetConnectionCount(t *testing.T) {
-    chatRoom := NewChatRoom("TEST_CHATROOM")
+    chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     guestA := NewGuest(randomSerial(), nil)
     guestB := NewGuest(randomSerial(), nil)
+    chatRoom.AddInvitedGuest(ownerGuest, guestA)
+    chatRoom.AddInvitedGuest(ownerGuest, guestB)
     chatRoom.AddGuest(*guestA)
     chatRoom.AddGuest(*guestB)
-    if chatRoom.GetConnectionCount() != 2 {
+    if chatRoom.GetConnectionCount() != 3 {
         t.Error("TestChatRoomGetConnectionCount FAILED")
     }
 }
 
 // Tests if the ChatRoom can remove a guest.
 func TestChatRoomRemoveGuest(t *testing.T) {
-    chatRoom := NewChatRoom("TEST_CHATROOM")
+    chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     guestA := NewGuest(randomSerial(), nil)
     guestB := NewGuest(randomSerial(), nil)
+    chatRoom.AddInvitedGuest(ownerGuest, guestA)
+    chatRoom.AddInvitedGuest(ownerGuest, guestB)
     chatRoom.AddGuest(*guestA)
     chatRoom.AddGuest(*guestB)
     chatRoom.RemoveGuest(*guestA)
-    if chatRoom.GetConnectionCount() != 1 {
+    if chatRoom.GetConnectionCount() != 2 {
         t.Error("TestChatRoomRemoveGuest FAILED")
     }
     chatRoom.RemoveGuest(*guestB)
-    if chatRoom.GetConnectionCount() != 0 {
+    if chatRoom.GetConnectionCount() != 1 {
         t.Error("TestChatRoomRemoveGuest FAILED")
     }
 }
 
 func TestChatRoomEquals(t *testing.T) {
-    chatRoom := NewChatRoom("TEST_CHATROOM")
-    chatRoomA := NewChatRoom("TEST_CHATROOM")
-    chatRoomB := NewChatRoom("TEST_CHATROOM_B")
-    chatRoomC := NewChatRoom("TEST_CHATROOM_C")
-    guest1 := NewGuest(randomSerial(), nil)
-    guest2 := NewGuest(randomSerial(), nil)
-    chatRoom.AddGuest(*guest1)
-    chatRoomA.AddGuest(*guest1)
-    chatRoomB.AddGuest(*guest2)
-    chatRoomC.AddGuest(*guest1)
-    if chatRoom.Equals(chatRoomB) {
-        t.Error("TestChatRoomEquals FAILED")
-    }else if chatRoom.Equals(chatRoomC) {
-        t.Error("TestChatRoomEquals FAILED")
-    } else if !chatRoom.Equals(chatRoomA) {
-        t.Error("TestChatRoomEquals FAILED")
-    }
+    t.Error("TestChatRoomEquals FAILED")
 }
 
+/* TESTS FOR THE SERVER STRUCT */
+
 // Tests if the server sends a message to a specific client.
-func TestSendMessage(t *testing.T) {
+func TestSend(t *testing.T) {
     guestConn, client := net.Pipe()
     message := "TEST_MESSAGE"
     guest := *NewGuest(randomSerial(), guestConn)
     go func ()  {
-        sendMessage(message, guest)
+        send(message, guest)
         guestConn.Close()
     }()
     receivedMessage, _ := bufio.NewReader(client).ReadString('\n')
     receivedMessage = strings.Trim(receivedMessage, "\n")
     client.Close()
     if receivedMessage != message {
-        t.Error("TestSendMessage FAILED")
+        t.Error("TestSend FAILED")
     }
 }
 
-// Tests if the server sends an event to a specific client.
-func TestSendEvent(t *testing.T) {
-    guestConn, client := net.Pipe()
-    event := events.UNDEFINED
-    guest := *NewGuest(randomSerial(), guestConn)
-    go func ()  {
-        sendEvent(event, guest)
-        guestConn.Close()
-    }()
-    receivedMessage, _ := bufio.NewReader(client).ReadString('\n')
-    receivedEvent := events.ToChatEvent(strings.Trim(receivedMessage, "\n"))
-    client.Close()
-    if receivedEvent != event {
-        t.Error("TestSendEvent FAILED")
+// Tests if the server can accept a client.
+func TestConnect(t *testing.T) {
+    clientA = *newClient(aleatoryPort())
+    clientA.sendMessage("TEST_MESSAGE")
+    receivedMessage := strings.Trim(clientA.getMessage(), "\n")
+    if receivedMessage != "...INVALID MESSAGE" {
+        t.Error("TestConnect FAILED")
+    }
+}
+
+func TestIDENTIFY(t *testing.T) {
+    clientA.sendMessage("IDENTIFY")
+    receivedMessage := strings.Trim(clientA.getMessage(), "\n")
+    if receivedMessage != "...INVALID MESSAGE" {
+        t.Error("TestIDENTIFY FAILED")
+    }
+    clientA.sendMessage("IDENTIFY Skywalker")
+    if receivedMessage != "...SUCCESFUL IDENTIFICATION" {
+        t.Error("TestIDENTIFY FAILED")
+    }
+    clientB.sendMessage("IDENTIFY Skywalker")
+    if receivedMessage != "...USERNAME NOT AVAILABLE" {
+        t.Error("TestIDENTIFY FAILED")
+    }
+}
+
+func TestPUBLICMESSAGE(t *testing.T) {
+    client := *newClient(aleatoryPort())
+    client.sendMessage("PUBLICMESSAGE")
+    receivedMessage := strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...INVALID MESSAGE" {
+        t.Error("TestPUBLICMESSAGE FAILED")
+    }
+    client.sendMessage("PUBLICMESSAGE message")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...MUST IDENTIFY FIRST" {
+        t.Error("TestPUBLICMESSAGE FAILED")
+    }
+    clientA.sendMessage("PUBLICMESSAGE message")
+    receivedMessage = strings.Trim(clientB.getMessage(), "\n")
+    if receivedMessage != "...PUBLIC-Skywalker: message" {
+        t.Error("TestPUBLICMESSAGE FAILED")
+    }
+}
+
+func TestMESSAGE(t *testing.T) {
+    client := *newClient(aleatoryPort())
+    client.sendMessage("MESSAGE")
+    receivedMessage := strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...INVALID MESSAGE" {
+        t.Error("TestMESSAGE FAILED")
+    }
+    client.sendMessage("MESSAGE Skywalker message")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...MUST IDENTIFY FIRST" {
+        t.Error("TestMESSAGE FAILED")
+    }
+    clientA.sendMessage("MESSAGE QuiGon message")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
+    if receivedMessage != "...USER QuiGon NOT FOUND" {
+        t.Error("TestMESSAGE FAILED")
+    }
+    clientB.sendMessage("MESSAGE Skywalker message")
+    receivedMessageA := strings.Trim(clientA.getMessage(), "\n")
+    receivedMessageB := strings.Trim(clientB.getMessage(), "\n")
+    if receivedMessageB != "...MESSAGE SENT" {
+        t.Error("TestMESSAGE FAILED")
+    } else if receivedMessageA != "Kenobi: message" {
+        t.Error("TestMESSAGE FAILED")
+    }
+}
+
+func TestUSERS(t *testing.T) {
+    client := *newClient(aleatoryPort())
+    client.sendMessage("USERS")
+    receivedMessage := strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...MUST IDENTIFY FIRST" {
+        t.Error("TestUSERS FAILED")
+    }
+    clientA.sendMessage("USERS")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
+    receivedMessageArray := strings.Split(receivedMessage, " ")
+    if len(receivedMessageArray) != 2 {
+        t.Error("TestUSERS FAILED")
+    }
+    entryA := receivedMessageArray[0]
+    entryB := receivedMessageArray[1]
+    if entryA != "Kenobi" {
+        if entryA != "Skywalker" {
+            t.Error("TestUSERS FAILED")
+        }
+    } else if entryB != "Kenobi" {
+        if entryB != "Skywalker" {
+            t.Error("TestUSERS FAILED")
+        }
+    }
+}
+
+func TestSTATUS(t *testing.T) {
+    client := *newClient(aleatoryPort())
+    clientB.sendMessage("MESSAGE")
+
+    client.sendMessage("STATUS")
+    receivedMessage := strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...INVALID MESSAGE" {
+        t.Error("TestSTATUS FAILED")
+    }
+    client.sendMessage("STATUS BUSY")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...MUST IDENTIFY FIRST" {
+        t.Error("TestSTATUS FAILED")
+    }
+    clientA.sendMessage("STATUS EVENT")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
+    if receivedMessage != "...INVALID STATUS" {
+        t.Error("TestSTATUS FAILED")
+    }
+    clientA.sendMessage("STATUS ACTIVE")
+    receivedMessage = strings.Trim(clientB.getMessage(), "\n")
+    if receivedMessage != "Skywalker ACTIVE" {
+        t.Error("TestSTATUS FAILED")
+    }
+    clientB.sendMessage("MESSAGE")
+    clientA.sendMessage("STATUS BUSY")
+    receivedMessage = strings.Trim(clientB.getMessage(), "\n")
+    if receivedMessage != "Skywalker BUSY" {
+        t.Error("TestSTATUS FAILED")
+    }
+    clientB.sendMessage("MESSAGE")
+    clientA.sendMessage("STATUS AWAY")
+    receivedMessage = strings.Trim(clientB.getMessage(), "\n")
+    if receivedMessage != "Skywalker AWAY" {
+        t.Error("TestSTATUS FAILED")
+    }
+}
+
+func TestCREATEROOM(t *testing.T) {
+    client := *newClient(aleatoryPort())
+    client.sendMessage("CREATEROOM")
+    receivedMessage := strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...INVALID MESSAGE" {
+        t.Error("TestCREATEROOM FAILED")
+    }
+    client.sendMessage("CREATEROOM MosEisley")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...MUST IDENTIFY FIRST" {
+        t.Error("TestCREATEROOM FAILED")
+    }
+    clientA.sendMessage("CREATEROOM MosEisley")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
+    if receivedMessage != "...ROOM CREATED" {
+        t.Error("TestCREATEROOM FAILED")
+    }
+}
+
+func TestINVITE(t *testing.T) {
+    client := *newClient(aleatoryPort())
+    client.sendMessage("INVITE")
+    receivedMessage := strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...INVALID MESSAGE" {
+        t.Error("TestINVITE FAILED")
+    }
+    client.sendMessage("INVITE MosEisley Skywalker")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...MUST IDENTIFY FIRST" {
+        t.Error("TestINVITE FAILED")
+    }
+    client.sendMessage("IDENTIFY Yoda")
+    _ = strings.Trim(client.getMessage(), "\n")
+    client.sendMessage("INVITE MosEisley Skywalker")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...YOU ARE NOT THE OWNER OF THE ROOM" {
+        t.Error("TestINVITE FAILED")
+    }
+    clientA.sendMessage("INVITE MosEisley Yoda")
+    client.sendMessage("MESSAGE")
+    receivedMessageA := strings.Trim(clientA.getMessage(), "\n")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessageA != "...INVITATION SENT TO Yoda" {
+        t.Error("TestINVITE FAILED")
+    } else if receivedMessage != "...INVITATION TO JOIN MosEisley ROOM BY Skywalker" {
+        t.Error("TestINVITE FAILED")
+    }
+}
+
+func TestJOINROOM(t *testing.T) {
+    client := *newClient(aleatoryPort())
+    client.sendMessage("JOINROOM")
+    receivedMessage := strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...INVALID MESSAGE" {
+        t.Error("TestJOINROOM FAILED")
+    }
+    client.sendMessage("JOINROOM MosEisley")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...MUST IDENTIFY FIRST" {
+        t.Error("TestJOINROOM FAILED")
+    }
+    clientB.sendMessage("JOINROOM MosEisley")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
+    if receivedMessage != "...YOU ARE NOT INVITED TO ROOM MosEisley" {
+        t.Error("TestJOINROOM FAILED")
+    }
+    clientA.sendMessage("INVITE MosEisley Kenobi")
+    _ = strings.Trim(clientA.getMessage(), "\n")
+    clientB.sendMessage("JOINROOM MosEisley")
+    receivedMessage = strings.Trim(clientB.getMessage(), "\n")
+    if receivedMessage != "...SUCCESFULLY JOINED TO ROOM" {
+        t.Error("TestJOINROOM FAILED")
+    }
+}
+
+func TestROOMESSAGE(t *testing.T) {
+    client := *newClient(aleatoryPort())
+    client.sendMessage("ROOMESSAGE")
+    receivedMessage := strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...INVALID MESSAGE" {
+        t.Error("TestROOMESSAGE FAILED")
+    }
+    client.sendMessage("ROOMESSAGE MosEisley message")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...MUST IDENTIFY FIRST" {
+        t.Error("TestROOMESSAGE FAILED")
+    }
+    clientA.sendMessage("ROOMESSAGE DeathStar message")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
+    if receivedMessage != "...ROOM NOT EXISTS" {
+        t.Error("TestROOMESSAGE FAILED")
+    }
+    client.sendMessage("IDENTIFY Palpatine")
+    _ = strings.Trim(client.getMessage(), "\n")
+    client.sendMessage("ROOMESSAGE MosEisley message")
+    receivedMessage = strings.Trim(client.getMessage(), "\n")
+    if receivedMessage != "...YOU ARE NOT PART OF THE ROOM" {
+        t.Error("TestROOMESSAGE FAILED")
+    }
+    clientA.sendMessage("ROOMESSAGE MosEisley message")
+    receivedMessageA := strings.Trim(clientA.getMessage(), "\n")
+    receivedMessageB := strings.Trim(clientB.getMessage(), "\n")
+    if receivedMessageA != "...MESSAGE SENT" {
+        t.Error("TestROOMESSAGE FAILED")
+    } else if receivedMessageB != "...MosEisley-Skywalker: message" {
+        t.Error("TestROOMESSAGE FAILED")
     }
 }

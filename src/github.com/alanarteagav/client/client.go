@@ -76,5 +76,5 @@ func Listen(connection net.Conn) string {
 // SendMessage method.
 // Receives a string and sends it through the client's connection.
 func (client Client) SendMessage(message string)  {
-    client.connection.Write([]byte(message + "\n"))
+    client.connection.Write([]byte(message))
 }
