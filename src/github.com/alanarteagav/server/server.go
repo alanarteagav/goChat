@@ -91,6 +91,7 @@ func (server Server) handleConnection(guest *Guest)  {
                 fmt.Println("[ MESSAGE " + messageIn + " ]")
             case events.UNDEFINED:
                 fmt.Println("[UNDEFINED EVENT]")
+                fmt.Println(message)
             case events.ERROR:
                 fmt.Println("[ERROR!]")
         }
