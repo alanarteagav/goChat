@@ -90,7 +90,7 @@ func (server Server) listen(guest *Guest) (string, error) {
 func (server Server) handleConnection(guest *Guest)  {
     for {
         message, err := server.listen(guest)
-        if err != nil{
+        if err != nil {
             return
         }
         stringArray := strings.Split(message, " ")
@@ -253,6 +253,11 @@ func (server Server) handleConnection(guest *Guest)  {
                     send("...ROOM NOT EXISTS", *guest)
                 }
             }
+        case string(events.DISCONNECT):
+            delete(server.guestsById, guest.GetSerial())
+            delete(server.guestsByUsername, guest.GetUsername())
+            guest.GetConnection().Close()
+            return
         default :
             send(string(events.INVALID), *guest)
         }
