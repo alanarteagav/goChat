@@ -225,7 +225,7 @@ func (server Server) handleConnection(guest *Guest)  {
                 }
             }
         case string(events.ROOMESSAGE):
-            if len(stringArray) != 3 {
+            if len(stringArray) < 3 {
                 send(string(events.INVALID), *guest)
             } else if !guest.IsIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
