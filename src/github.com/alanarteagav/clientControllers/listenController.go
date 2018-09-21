@@ -3,7 +3,6 @@ package clientControllers
 import "github.com/gotk3/gotk3/gtk"
 import "github.com/gotk3/gotk3/glib"
 import "github.com/alanarteagav/client"
-import "fmt"
 import "log"
 import "strings"
 
@@ -31,6 +30,20 @@ func NewListenController(chatClient client.Client,
     return controller
 }
 
+
+func containsState(state string) bool {
+    if strings.Contains(state, "ACTIVE"){
+        return true
+    } else if strings.Contains(state, "BUSY"){
+        return true
+    } else if strings.Contains(state, "AWAY"){
+        return true
+    } else {
+        return false
+    }
+}
+
+
 func (controller listenController) listen(listenChannel chan string,
                                           notebook gtk.Notebook){
     globalBuffer, _ := controller.globalTextView.GetBuffer()
@@ -55,6 +68,7 @@ func (controller listenController) listen(listenChannel chan string,
                 errorDialog.Connect("response", errorDialog.Close)
                 errorDialog.Show()
             })
+            continue
         } else if strings.HasPrefix(message, "...PUBLIC") {
             message = strings.TrimPrefix(message, "...PUBLIC")
             publicMessage := strings.SplitAfterN(message, ":", 2)
@@ -64,6 +78,8 @@ func (controller listenController) listen(listenChannel chan string,
                     iter := globalBuffer.GetEndIter()
                     globalBuffer.Insert(iter, username + "\n")
                     globalBuffer.Insert(iter, publicMessage[1] + "\n\n")
+                    controller.globalTextView.ScrollToIter(iter, 0.2, true,
+                                                           0.0, 1.0)
                 })
             } else {
                 continue
@@ -87,6 +103,7 @@ func (controller listenController) listen(listenChannel chan string,
                         buffer, _ := view.GetBuffer()
                         iter := buffer.GetEndIter()
                         buffer.Insert(iter, userAndMessage[1] + "\n")
+                        view.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                         view.ShowAll()
                     })
                 } else {
@@ -115,15 +132,33 @@ func (controller listenController) listen(listenChannel chan string,
                         iter := privateBuffer.GetEndIter()
                         privateBuffer.Insert(iter, username + "\n")
                         privateBuffer.Insert(iter, userAndMessage[1] + "\n\n")
+                        roomView.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                     })
                 }
             } else {
                 continue
             }
             continue
+        } else if len(strings.Split(message, " ")) == 2 &&
+                  containsState(message) {
+
+            dialogBuilder, err := gtk.BuilderNewFromFile(DIALOGS_GLADE)
+                if err != nil {  log.Fatal(err.Error())  }
+
+            glib.IdleAdd(func ()  {
+                dialogObject, err := dialogBuilder.GetObject(INFO_DIALOG)
+                    if err != nil {  log.Fatal(err.Error())  }
+                errorDialog, ok := dialogObject.(*gtk.MessageDialog)
+                    if !ok { log.Fatal(err.Error()) }
+                errorDialog.SetMarkup(message + "\n" +
+                                      "Press ESC to close.")
+                errorDialog.Connect("close", errorDialog.Close)
+                errorDialog.Connect("response", errorDialog.Close)
+                errorDialog.Show()
+            })
+            continue
         } else {
             go func() {
-                fmt.Println(message)
                 listenChannel <- message
             }()
             if strings.Contains(message, ":"){
@@ -136,6 +171,7 @@ func (controller listenController) listen(listenChannel chan string,
                             iter := buffer.GetEndIter()
                             buffer.Insert(iter, username + "\n")
                             buffer.Insert(iter, privateMessage[1] + "\n\n")
+                            view.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                             view.ShowAll()
                         })
                     } else {
@@ -162,6 +198,7 @@ func (controller listenController) listen(listenChannel chan string,
                             iter := privateBuffer.GetEndIter()
                             privateBuffer.Insert(iter, username + "\n")
                             privateBuffer.Insert(iter, privateMessage[1] + "\n\n")
+                            privateView.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                         })
                     }
                 } else {

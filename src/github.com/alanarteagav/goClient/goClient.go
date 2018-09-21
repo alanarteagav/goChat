@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/alanarteagav/clientControllers"
-	//"github.com/alanarteagav/events"
 	"github.com/gotk3/gotk3/gtk"
 	"log"
 	"os"

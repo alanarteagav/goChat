@@ -5,7 +5,6 @@ import "github.com/gotk3/gotk3/gtk"
 import "github.com/gotk3/gotk3/glib"
 import "os"
 import "log"
-import "fmt"
 import "strings"
 import "strconv"
 
@@ -38,7 +37,13 @@ const (
     CREATE_CHATROOM_MENU = "createChatroomMenu"
     JOIN_CHATROOM_MENU = "joinChatroomMenu"
     INVITE_CHATROOM_MENU = "inviteChatroomMenu"
+
     USERS_MENU = "usersMenu"
+    ACTIVE_MENU = "activeMenu"
+    BUSY_MENU = "busyMenu"
+    AWAY_MENU = "awayMenu"
+
+    STATUS_LABEL = "statusLabel"
 )
 
 type MainWindowController interface {
@@ -56,6 +61,9 @@ func setHandlers(controller *mainWindowController) map[string]interface{} {
      handlers["invite"] = controller.triggerInviteWindow
      handlers["users"] = controller.triggerUsersWindow
      handlers["sendMessage"] = controller.sendMessage
+     handlers["active"] = controller.active
+     handlers["busy"] = controller.busy
+     handlers["away"] = controller.away
 
      return handlers
 }
@@ -77,6 +85,12 @@ type mainWindowController struct{
     joinChatroomMenu gtk.MenuItem
     inviteChatroomMenu gtk.MenuItem
     usersMenu gtk.MenuItem
+
+    activeMenu gtk.MenuItem
+    busyMenu gtk.MenuItem
+    awayMenu gtk.MenuItem
+
+    statusLabel gtk.Label
 
     listenControl listenController
 }
@@ -133,12 +147,36 @@ func NewMainWindowController(builder gtk.Builder) *mainWindowController {
         if err != nil {  log.Fatal(err.Error())  }
     controller.usersMenu = *usersMenu.(*gtk.MenuItem)
 
+    //The active menu for the status menu button.
+    activeMenu, err := controller.builder.GetObject(ACTIVE_MENU)
+        if err != nil {  log.Fatal(err.Error())  }
+    controller.activeMenu = *activeMenu.(*gtk.MenuItem)
+
+    //The busy menu for the status menu button.
+    busyMenu, err := controller.builder.GetObject(BUSY_MENU)
+        if err != nil {  log.Fatal(err.Error())  }
+    controller.busyMenu = *busyMenu.(*gtk.MenuItem)
+
+    //The away menu for the status menu button.
+    awayMenu, err := controller.builder.GetObject(AWAY_MENU)
+        if err != nil {  log.Fatal(err.Error())  }
+    controller.awayMenu = *awayMenu.(*gtk.MenuItem)
+
+    //The label for the status menu button.
+    statusLabel, err := controller.builder.GetObject(STATUS_LABEL)
+        if err != nil {  log.Fatal(err.Error())  }
+    controller.statusLabel = *statusLabel.(*gtk.Label)
+    controller.statusLabel.SetLabel("DISCONNECTED")
+
     // Sets the start state for the chat's menus.
     controller.disconnectMenu.SetSensitive(false)
     controller.createChatroomMenu.SetSensitive(false)
     controller.joinChatroomMenu.SetSensitive(false)
     controller.inviteChatroomMenu.SetSensitive(false)
     controller.usersMenu.SetSensitive(false)
+    controller.activeMenu.SetSensitive(false)
+    controller.busyMenu.SetSensitive(false)
+    controller.awayMenu.SetSensitive(false)
     controller.globalTextView.SetSizeRequest(500, 300)
 
     return controller
@@ -260,6 +298,10 @@ func (controller *mainWindowController) connect(
                 controller.joinChatroomMenu.SetSensitive(true)
                 controller.inviteChatroomMenu.SetSensitive(true)
                 controller.usersMenu.SetSensitive(true)
+                controller.busyMenu.SetSensitive(true)
+                controller.awayMenu.SetSensitive(true)
+                controller.statusLabel.SetLabel("ACTIVE")
+
                 loginWindow.Close()
             }
         }
@@ -275,6 +317,11 @@ func (controller *mainWindowController) disconnect()  {
     controller.joinChatroomMenu.SetSensitive(false)
     controller.inviteChatroomMenu.SetSensitive(false)
     controller.usersMenu.SetSensitive(false)
+
+    controller.activeMenu.SetSensitive(false)
+    controller.busyMenu.SetSensitive(false)
+    controller.awayMenu.SetSensitive(false)
+    controller.statusLabel.SetLabel("DISCONNECTED")
 
     buffer, _ := controller.globalTextView.GetBuffer()
     buffer.SetText("")
@@ -412,9 +459,7 @@ func (controller *mainWindowController) invite(
     name, _ := inviteController.GetName()
     username, _ := inviteController.GetUsername()
     clientGlobal.SendMessage("INVITE " + name + " " + username)
-    fmt.Println("INVITE " + name + " " + username)
     response := <- controller.listenChannel
-    fmt.Println(response)
     if response == "...YOU ARE NOT THE OWNER OF THE ROOM"{
         dialogObject, err := dialogBuilder.GetObject(INFO_DIALOG)
             if err != nil {  log.Fatal(err.Error())  }
@@ -489,6 +534,7 @@ func (controller *mainWindowController) sendMessage()  {
                     iter := buffer.GetEndIter()
                     buffer.Insert(iter, "goChat: The requested user (" + id +
                                   ") doesn't exist.\n\n")
+                    controller.globalTextView.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                     globalEntry.SetText("")
                 })
             } else {
@@ -499,6 +545,7 @@ func (controller *mainWindowController) sendMessage()  {
                         buffer.Insert(iter, "[YOU]" + "\n")
                         buffer.Insert(iter, messageSplit[1] + "\n\n")
                         view.ShowAll()
+                        view.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
 
                         globalEntry.SetText("")
                     })
@@ -526,7 +573,7 @@ func (controller *mainWindowController) sendMessage()  {
                         iter := privateBuffer.GetEndIter()
                         privateBuffer.Insert(iter, "[YOU]" + "\n")
                         privateBuffer.Insert(iter, messageSplit[1] + "\n\n")
-
+                        privateView.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                         globalEntry.SetText("")
                     })
                 }
@@ -546,6 +593,7 @@ func (controller *mainWindowController) sendMessage()  {
                     iter := buffer.GetEndIter()
                     buffer.Insert(iter, "goChat: The requested " +
                                   "chatroom doesn't exist.\n\n")
+                    controller.globalTextView.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                     globalEntry.SetText("")
                 })
             } else if response == "...YOU ARE NOT PART OF THE ROOM" {
@@ -553,6 +601,7 @@ func (controller *mainWindowController) sendMessage()  {
                     buffer, _ := controller.globalTextView.GetBuffer()
                     iter := buffer.GetEndIter()
                     buffer.Insert(iter, "goChat: You are not part of the room.\n\n")
+                    controller.globalTextView.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                     globalEntry.SetText("")
                 })
             } else {
@@ -562,6 +611,7 @@ func (controller *mainWindowController) sendMessage()  {
                         iter := buffer.GetEndIter()
                         buffer.Insert(iter, "[YOU]" + "\n")
                         buffer.Insert(iter, messageSplit[1] + "\n\n")
+                        view.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                         view.ShowAll()
                     })
                 } else {
@@ -590,6 +640,7 @@ func (controller *mainWindowController) sendMessage()  {
                         iter := buffer.GetEndIter()
                         buffer.Insert(iter, "[YOU]" + "\n")
                         buffer.Insert(iter, messageSplit[1] + "\n\n")
+                        roomView.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                     })
                 }
             }
@@ -600,6 +651,7 @@ func (controller *mainWindowController) sendMessage()  {
                 iter := buffer.GetEndIter()
                 buffer.Insert(iter, "[YOU]" + "\n")
                 buffer.Insert(iter, message + "\n\n")
+                controller.globalTextView.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
                 globalEntry.SetText("")
             })
         }
@@ -610,6 +662,7 @@ func (controller *mainWindowController) sendMessage()  {
             iter := buffer.GetEndIter()
             buffer.Insert(iter, "[YOU]" + "\n")
             buffer.Insert(iter, message + "\n\n")
+            controller.globalTextView.ScrollToIter(iter, 0.0, false, 0.0, 1.0)
             globalEntry.SetText("")
         })
     } else {
@@ -617,6 +670,31 @@ func (controller *mainWindowController) sendMessage()  {
             globalEntry.SetText("")
         })
     }
+}
+
+
+func (controller *mainWindowController) active()  {
+    clientGlobal.SendMessage("STATUS ACTIVE")
+    controller.activeMenu.SetSensitive(false)
+    controller.busyMenu.SetSensitive(true)
+    controller.awayMenu.SetSensitive(true)
+    controller.statusLabel.SetLabel("ACTIVE")
+}
+
+func (controller *mainWindowController) busy()  {
+    clientGlobal.SendMessage("STATUS BUSY")
+    controller.activeMenu.SetSensitive(true)
+    controller.busyMenu.SetSensitive(false)
+    controller.awayMenu.SetSensitive(true)
+    controller.statusLabel.SetLabel("BUSY")
+}
+
+func (controller *mainWindowController) away()  {
+    clientGlobal.SendMessage("STATUS AWAY")
+    controller.activeMenu.SetSensitive(true)
+    controller.busyMenu.SetSensitive(true)
+    controller.awayMenu.SetSensitive(false)
+    controller.statusLabel.SetLabel("AWAY")
 }
 
 func (controller mainWindowController) Exit()  {
