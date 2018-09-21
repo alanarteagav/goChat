@@ -11,15 +11,16 @@ type ChatRoom struct {
 func NewChatRoom(owner Guest, name string) *ChatRoom {
     chatRoom := new(ChatRoom)
     chatRoom.owner = owner
-    chatRoom.connectionCount = 0
+    chatRoom.connectionCount = 1
     chatRoom.name = name
     chatRoom.guests = make(map[string]Guest)
     chatRoom.invitedGuests = make(map[string]Guest)
+    chatRoom.guests[owner.GetUsername()] = owner
     return chatRoom
 }
 
 func (chatRoom ChatRoom) GetOwner() *Guest {
-    return new(Guest)
+    return &chatRoom.owner
 }
 
 func (chatRoom ChatRoom) GetName() string {
@@ -39,19 +40,32 @@ func (chatRoom ChatRoom) GetGuests() map[string]Guest {
 }
 
 func (chatRoom ChatRoom) Hosts(guest *Guest) bool {
+    if _, ok := chatRoom.guests[guest.GetUsername()]; ok{
+        return true
+    }
     return false
 }
 
 func (chatRoom *ChatRoom) AddGuest(guest Guest) {
-    chatRoom.connectionCount++
-    chatRoom.guests[guest.GetUsername()] = guest
+    if chatRoom.WasInvited(&guest) {
+        chatRoom.connectionCount++
+        chatRoom.guests[guest.GetUsername()] = guest
+    }
 }
 
-func (chatRoom *ChatRoom) AddInvitedGuest(owner Guest, guest *Guest) {
-
+func (chatRoom *ChatRoom) AddInvitedGuest(owner Guest, guest *Guest) bool {
+    if !chatRoom.owner.Equals(&owner) {
+        return false
+    } else {
+        chatRoom.invitedGuests[guest.GetUsername()] = *guest
+        return true
+    }
 }
 
 func (chatRoom ChatRoom) WasInvited(guest *Guest) bool {
+    if _, ok := chatRoom.invitedGuests[guest.GetUsername()]; ok{
+        return true
+    }
     return false
 }
 

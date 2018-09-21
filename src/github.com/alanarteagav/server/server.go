@@ -19,8 +19,10 @@ func randomSerial() int {
 // Server struct.
 // Defines the server's port, and a dictionary of guests.
 type Server struct {
-    port        int
-    guestsById  map[int]Guest
+    port             int
+    guestsById       map[int]Guest
+    guestsByUsername map[string]Guest
+    chatRooms        map[string]ChatRoom
 }
 
 // Server constructor.
@@ -28,6 +30,8 @@ func NewServer(port int) *Server {
     server := new(Server)
     server.port = port
     server.guestsById = make(map[int]Guest)
+    server.guestsByUsername = make(map[string]Guest)
+    server.chatRooms = make(map[string]ChatRoom)
     return server
 }
 
@@ -61,11 +65,21 @@ func (server Server) deliver(message string) {
     }
 }
 
+func (server Server) deliverToUsers(message string, sender Guest) {
+    for _ , guest := range server.guestsByUsername {
+        if &guest != nil && guest.GetUsername() != sender.GetUsername() {
+            send(message, guest)
+        }
+    }
+}
+
 // Auxiliar method which listens strings from a guest.
 func (server Server) listen(guest *Guest) (string, error) {
     message, err := bufio.NewReader(guest.GetConnection()).ReadString('\n')
     if err != nil {
-        fmt.Println("[Client : " + guest.GetUsername() + " disconnected]")
+        serialString := strconv.Itoa(guest.GetSerial())
+        fmt.Println("[Client : " + serialString + " disconnected]")
+        delete(server.guestsByUsername, guest.GetUsername())
         delete(server.guestsById, guest.GetSerial())
         return "", errors.New("Client out")
     }
@@ -77,13 +91,180 @@ func (server Server) listen(guest *Guest) (string, error) {
 func (server Server) handleConnection(guest *Guest)  {
     for {
         message, err := server.listen(guest)
-        if err != nil{
+        if err != nil {
             return
         }
-        event := events.ToChatEvent(message)
+        stringArray := strings.Split(message, " ")
+        var event string
+        event = stringArray[0]
         switch event {
+        case string(events.IDENTIFY):
+            if len(stringArray) != 2 {
+                send(string(events.INVALID), *guest)
+            } else {
+                username := stringArray[1]
+                _, usernameAlreadyExists := server.guestsByUsername[username]
+                if usernameAlreadyExists {
+                    send("...USERNAME NOT AVAILABLE", *guest)
+                } else {
+                    delete(server.guestsByUsername, guest.GetUsername())
+                    guest.SetUsername(username)
+                    server.guestsByUsername[username] = *guest
+                    send("...SUCCESFUL IDENTIFICATION", *guest)
+                }
+            }
+        case string(events.PUBLICMESSAGE):
+            if len(stringArray) < 2 {
+                send(string(events.INVALID), *guest)
+            } else if !guest.IsIdentified() {
+                send(string(events.IDENTIFY_ERROR), *guest)
+            } else {
+                stringToSend :=
+                    strings.TrimPrefix(message, "PUBLICMESSAGE" + " ")
+                stringToSend = "...PUBLIC-" + guest.GetUsername() +
+                               ": " + stringToSend
+                server.deliverToUsers(stringToSend, *guest)
+            }
+        case string(events.MESSAGE):
+            if len(stringArray) < 3 {
+                send(string(events.INVALID), *guest)
+            } else if !guest.IsIdentified() {
+                send(string(events.IDENTIFY_ERROR), *guest)
+            } else {
+                username := stringArray[1]
+                if guestInHash, ok := server.guestsByUsername[username]; ok{
+                    stringToSend :=
+                    strings.TrimPrefix(
+                        message, "MESSAGE" + " " + username + " ")
+                    stringToSend = guest.GetUsername() + ": " + stringToSend
+                    send(stringToSend, guestInHash)
+                    send("...MESSAGE SENT", *guest)
+                } else {
+                    send("...USER " + username + " NOT FOUND", *guest)
+                }
+            }
+        case string(events.USERS):
+            if len(stringArray) != 1 {
+                send(string(events.INVALID), *guest)
+            } else if !guest.IsIdentified() {
+                send(string(events.IDENTIFY_ERROR), *guest)
+            } else {
+                sendString := ""
+                for username, _ := range server.guestsByUsername {
+                    sendString += username + " "
+                }
+                sendString = strings.TrimSpace(sendString)
+                send(sendString, *guest)
+            }
+        case string(events.STATUS):
+            if len(stringArray) != 2 {
+                send(string(events.INVALID), *guest)
+            } else if !guest.IsIdentified() {
+                send(string(events.IDENTIFY_ERROR), *guest)
+            } else {
+                status := ToUserStatus(stringArray[1])
+                if status != UNDEFINED {
+                    guest.SetStatus(status)
+                    send(guest.GetUsername() +  " " + string(guest.GetStatus()),
+                        *guest)
+                } else {
+                    send("...INVALID STATUS", *guest)
+                }
+            }
+        case string(events.CREATEROOM):
+            if len(stringArray) != 2 {
+                send(string(events.INVALID), *guest)
+            } else if !guest.IsIdentified() {
+                send(string(events.IDENTIFY_ERROR), *guest)
+            } else {
+                chatRoomName := stringArray[1]
+                chatRoom := *NewChatRoom(*guest, chatRoomName)
+                server.chatRooms[chatRoomName] = chatRoom
+                send("...ROOM CREATED", *guest)
+            }
+        case string(events.INVITE):
+            if len(stringArray) < 3 {
+                send(string(events.INVALID), *guest)
+            } else if !guest.IsIdentified() {
+                send(string(events.IDENTIFY_ERROR), *guest)
+            } else {
+                chatRoomName := stringArray[1]
+                if chatRoom, ok := server.chatRooms[chatRoomName]; ok{
+                    stringArray = stringArray[2:]
+                    for _, username := range stringArray {
+                        if guestInHash, ok := server.guestsByUsername[username]; ok{
+                            if chatRoom.AddInvitedGuest(*guest, &guestInHash) {
+                                send("...INVITATION SENT TO " + username, *guest)
+                                send("...INVITATION TO JOIN " + chatRoomName +
+                                    " ROOM BY " + guest.GetUsername(),
+                                    guestInHash)
+                            } else {
+                                send("...YOU ARE NOT THE OWNER OF THE ROOM",
+                                    *guest)
+                            }
+                        }
+                    }
+                } else {
+                    send("...ROOM NOT EXISTS",
+                        *guest)
+                }
+            }
+        case string(events.JOINROOM):
+            if len(stringArray) != 2 {
+                send(string(events.INVALID), *guest)
+            } else if !guest.IsIdentified() {
+                send(string(events.IDENTIFY_ERROR), *guest)
+            } else {
+                chatRoomName := stringArray[1]
+                if chatRoom, ok := server.chatRooms[chatRoomName]; ok{
+                    if chatRoom.WasInvited(guest){
+                       chatRoom.AddGuest(*guest)
+                       send("...SUCCESFULLY JOINED TO ROOM", *guest)
+                    } else {
+                        send("...YOU ARE NOT INVITED TO ROOM " + chatRoomName,
+                            *guest)
+                    }
+                } else {
+                    send("Sorry, " + chatRoomName + " doesn't exist",
+                            *guest)
+                }
+            }
+        case string(events.ROOMESSAGE):
+            if len(stringArray) < 3 {
+                send(string(events.INVALID), *guest)
+            } else if !guest.IsIdentified() {
+                send(string(events.IDENTIFY_ERROR), *guest)
+            } else {
+                chatRoomName := stringArray[1]
+                if chatRoom, ok := server.chatRooms[chatRoomName]; ok{
+                    if chatRoom.Hosts(guest){
+                        for _ , chatRoomGuest := range chatRoom.GetGuests() {
+                            stringToSend :=
+                            strings.TrimPrefix(message, "ROOMESSAGE" +
+                                                " " + chatRoomName + " ")
+                            stringToSend = "..." + chatRoomName + "-" +
+                                            guest.GetUsername() + ": " +
+                                            stringToSend
+                            if !chatRoomGuest.Equals(guest) {
+                                send(stringToSend, chatRoomGuest)
+                            } else {
+                                send("...MESSAGE SENT", *guest)
+                            }
+                        }
+                    } else {
+                        send("...YOU ARE NOT PART OF THE ROOM", *guest)
+                    }
+                } else {
+                    send("...ROOM NOT EXISTS", *guest)
+                }
+            }
+        case string(events.DISCONNECT):
+            delete(server.guestsByUsername, guest.GetUsername())
+            delete(server.guestsById, guest.GetSerial())
+            guest.GetConnection().Close()
+            return
         default :
-            send("NOT A VALID EVENT", *guest)
+            send(string(events.INVALID), *guest)
         }
     }
 }

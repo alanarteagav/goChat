@@ -10,7 +10,9 @@ import (
     "strings"
     "os"
     "testing"
+    "fmt"
 )
+
 
 var chatServer Server
 var clientA testClient
@@ -80,9 +82,11 @@ func TestMain(m *testing.M) {
     ownerGuest = *NewGuest(randomSerial(), nil)
     clientB = *newClient(aleatoryPort())
     clientB.sendMessage("IDENTIFY Kenobi")
+    _ = strings.Trim(clientB.getMessage(), "\n")
     flag.Parse()
     runTests := m.Run()
     os.Exit(runTests)
+    fmt.Println("hi")
 }
 
 
@@ -181,7 +185,7 @@ func TestGuestEquals(t *testing.T) {
 func TestNewChatRoom(t *testing.T) {
     name := "TEST_NAME"
     guest := NewGuest(randomSerial(), nil)
-    chatRoom := NewChatRoom(ownerGuest, name)
+    chatRoom := NewChatRoom(*guest, name)
     if !guest.Equals(chatRoom.GetOwner()) {
         t.Error("TestNewChatRoom FAILED")
     } else if chatRoom.GetName() != name {
@@ -208,11 +212,11 @@ func TestChatRoomSetGetName(t *testing.T) {
 func TestChatRoomAddInvitedGuest(t *testing.T) {
     chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     invitedGuest := NewGuest(randomSerial(), nil)
-    notOwnerGuest := *NewGuest(randomSerial(), nil)
+    notOwnerGuest := NewGuest(randomSerial(), nil)
     if chatRoom.WasInvited(invitedGuest) {
         t.Error("TestChatRoomAddInvitedGuest FAILED")
     }
-    chatRoom.AddInvitedGuest(notOwnerGuest, invitedGuest)
+    chatRoom.AddInvitedGuest(*notOwnerGuest, invitedGuest)
     if chatRoom.WasInvited(invitedGuest) {
         t.Error("TestChatRoomAddInvitedGuest FAILED")
     }
@@ -310,10 +314,12 @@ func TestIDENTIFY(t *testing.T) {
         t.Error("TestIDENTIFY FAILED")
     }
     clientA.sendMessage("IDENTIFY Skywalker")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
     if receivedMessage != "...SUCCESFUL IDENTIFICATION" {
         t.Error("TestIDENTIFY FAILED")
     }
-    clientB.sendMessage("IDENTIFY Skywalker")
+    clientA.sendMessage("IDENTIFY Kenobi")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
     if receivedMessage != "...USERNAME NOT AVAILABLE" {
         t.Error("TestIDENTIFY FAILED")
     }
@@ -393,37 +399,36 @@ func TestUSERS(t *testing.T) {
 
 func TestSTATUS(t *testing.T) {
     client := *newClient(aleatoryPort())
-    clientB.sendMessage("MESSAGE")
-
     client.sendMessage("STATUS")
     receivedMessage := strings.Trim(client.getMessage(), "\n")
     if receivedMessage != "...INVALID MESSAGE" {
         t.Error("TestSTATUS FAILED")
     }
+
     client.sendMessage("STATUS BUSY")
     receivedMessage = strings.Trim(client.getMessage(), "\n")
     if receivedMessage != "...MUST IDENTIFY FIRST" {
         t.Error("TestSTATUS FAILED")
     }
+
     clientA.sendMessage("STATUS EVENT")
     receivedMessage = strings.Trim(clientA.getMessage(), "\n")
     if receivedMessage != "...INVALID STATUS" {
         t.Error("TestSTATUS FAILED")
     }
+
     clientA.sendMessage("STATUS ACTIVE")
-    receivedMessage = strings.Trim(clientB.getMessage(), "\n")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
     if receivedMessage != "Skywalker ACTIVE" {
         t.Error("TestSTATUS FAILED")
     }
-    clientB.sendMessage("MESSAGE")
     clientA.sendMessage("STATUS BUSY")
-    receivedMessage = strings.Trim(clientB.getMessage(), "\n")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
     if receivedMessage != "Skywalker BUSY" {
         t.Error("TestSTATUS FAILED")
     }
-    clientB.sendMessage("MESSAGE")
     clientA.sendMessage("STATUS AWAY")
-    receivedMessage = strings.Trim(clientB.getMessage(), "\n")
+    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
     if receivedMessage != "Skywalker AWAY" {
         t.Error("TestSTATUS FAILED")
     }
@@ -468,7 +473,6 @@ func TestINVITE(t *testing.T) {
         t.Error("TestINVITE FAILED")
     }
     clientA.sendMessage("INVITE MosEisley Yoda")
-    client.sendMessage("MESSAGE")
     receivedMessageA := strings.Trim(clientA.getMessage(), "\n")
     receivedMessage = strings.Trim(client.getMessage(), "\n")
     if receivedMessageA != "...INVITATION SENT TO Yoda" {
@@ -485,18 +489,22 @@ func TestJOINROOM(t *testing.T) {
     if receivedMessage != "...INVALID MESSAGE" {
         t.Error("TestJOINROOM FAILED")
     }
+
     client.sendMessage("JOINROOM MosEisley")
     receivedMessage = strings.Trim(client.getMessage(), "\n")
     if receivedMessage != "...MUST IDENTIFY FIRST" {
         t.Error("TestJOINROOM FAILED")
     }
+
     clientB.sendMessage("JOINROOM MosEisley")
-    receivedMessage = strings.Trim(clientA.getMessage(), "\n")
+    receivedMessage = strings.Trim(clientB.getMessage(), "\n")
     if receivedMessage != "...YOU ARE NOT INVITED TO ROOM MosEisley" {
         t.Error("TestJOINROOM FAILED")
     }
+
     clientA.sendMessage("INVITE MosEisley Kenobi")
     _ = strings.Trim(clientA.getMessage(), "\n")
+    _ = strings.Trim(clientB.getMessage(), "\n")
     clientB.sendMessage("JOINROOM MosEisley")
     receivedMessage = strings.Trim(clientB.getMessage(), "\n")
     if receivedMessage != "...SUCCESFULLY JOINED TO ROOM" {

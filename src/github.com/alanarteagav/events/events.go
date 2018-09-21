@@ -18,6 +18,8 @@ const (
     ROOMESSAGE ChatEvent = "ROOMESSAGE"
     PUBLICMESSAGE  ChatEvent = "PUBLICMESSAGE"
 
+    INVALID ChatEvent = "...INVALID MESSAGE"
+    IDENTIFY_ERROR ChatEvent = "...MUST IDENTIFY FIRST"
     ERROR   ChatEvent = "ERROR"
     UNDEFINED   ChatEvent = "UNDEFINED"
 )
