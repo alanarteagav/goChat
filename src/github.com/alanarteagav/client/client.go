@@ -2,12 +2,11 @@ package client
 
 import (
     "net"
-    "fmt"
+    "errors"
     "bufio"
     "strconv"
     "strings"
-    "os"
-    "log"
+    "time"
 )
 
 // Client struct.
@@ -15,8 +14,6 @@ import (
 // connection (golang's equivalent for sockets).
 type Client struct {
     username    string
-    ipAddress    string
-    port        int
     connection  net.Conn
 }
 
@@ -24,19 +21,39 @@ type Client struct {
 // Receives an username and the server's ip address and port.
 // It automatically dials to the server using the exported function Dial
 // from the net package.
-func NewClient(username string, ipAddress string, port int) *Client {
+func NewClient(username string) *Client {
     client := new(Client)
     client.username = username
-    connection, err := net.Dial("tcp", ipAddress +  ":" + strconv.Itoa(port))
-    if err != nil {
-        log.Fatalln(err)
-        fmt.Println("Unable to connect to server")
-    }
-    client.ipAddress = ipAddress
-    client.port = port
-    client.connection = connection
+    client.connection = nil
+
     return client
 }
+
+
+func (client *Client) Connect(ipAddress string, port int) error {
+
+    success := make(chan net.Conn)
+    fail := make(chan error)
+
+    go func () {
+        connection, err := net.Dial("tcp", ipAddress +  ":" + strconv.Itoa(port))
+        if err != nil {
+            fail <- errors.New("Cannot connect to server")
+        }
+        success <- connection
+    }()
+
+    select {
+    case <-time.After(5 * time.Second):
+        return errors.New("Cannot connect to server | Timed Out")
+    case err := <- fail :
+        return err
+    case connection := <- success :
+        client.connection = connection
+        return nil
+    }
+}
+
 
 // Returns client's username.
 func (client Client) GetUsername() string {
@@ -61,16 +78,13 @@ func (client *Client) SetConnection(connection net.Conn) {
 // Listen function.
 // Receives a connection (socket) to listen from, and returns a string
 // (if a string can be retrieved from the connection).
-func Listen(connection net.Conn) string {
-    for {
-        message, err := bufio.NewReader(connection).ReadString('\n')
+func (client Client) Listen() (string, error) {
+        message, err := bufio.NewReader(client.connection).ReadString('\n')
         message = strings.Trim(message, "\n")
         if err != nil{
-            fmt.Println("The server is off")
-            os.Exit(1)
+            return "", errors.New("Cannot hear through connection")
         }
-        return message
-    }
+        return message, nil
 }
 
 // SendMessage method.
