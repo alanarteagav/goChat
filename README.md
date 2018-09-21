@@ -10,10 +10,14 @@ use goChat, here is the link to Golang's download page.
 
 ## Setting GOPATH
 
-In order to use goChat, you should configure your GOPATH, by running
-these commands in your terminal. (suppose you've downloaded the goChat
-project in your directory /Users/yourname/files/goChat).
+In order to use goChat, you should configure your GOPATH.
+First, move to the goChat directory, using :
 
+```
+cd /(the path to the project directory)/goChat
+```
+
+and then run these commands in your terminal.
 ```
 export GOPATH=$(pwd)
 export GOBIN=$(pwd)/bin
@@ -23,7 +27,7 @@ export GOBIN=$(pwd)/bin
 
 To get goChat's necessary dependencies, you must go to the "goChat" directory:
 ```
-cd /Users/yourname/files/goChat
+cd /(the path to the project directory)/goChat
 ```
 
 and then run this command:
