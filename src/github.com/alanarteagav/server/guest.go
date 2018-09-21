@@ -21,7 +21,7 @@ const (
     UNDEFINED  UserStatus = "UNDEFINED"
 )
 
-func ToUserStatus(str string) UserStatus {
+func toUserStatus(str string) UserStatus {
     switch str {
     case "BUSY":
         return BUSY

@@ -53,11 +53,6 @@ func NewServer(port int) *Server {
     return server
 }
 
-// Returns server's port.
-func (server Server) GetPort() int {
-    return server.port
-}
-
 // Auxiliar function which listens strings from a connection.
 func listen(connection net.Conn) (string, error) {
     message, err := bufio.NewReader(connection).ReadString('\n')
@@ -181,7 +176,7 @@ func (server Server) handleConnection(guest *Guest)  {
             } else if !guest.isIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
             } else {
-                status := ToUserStatus(stringArray[1])
+                status := toUserStatus(stringArray[1])
                 if status != UNDEFINED {
                     guest.setStatus(status)
                     send(guest.getUsername() +  " " + string(guest.getStatus()),
