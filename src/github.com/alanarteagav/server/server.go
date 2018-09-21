@@ -91,6 +91,7 @@ func (server Server) deliverToUsers(message string, sender Guest) {
 func (server Server) listen(guest *Guest) (string, error) {
     message, err := bufio.NewReader(guest.getConnection()).ReadString('\n')
     if err != nil {
+
         serialString := strconv.Itoa(guest.getSerial())
         fmt.Println("[Client : " + serialString + " disconnected]")
         delete(server.guestsByUsername, guest.getUsername())
