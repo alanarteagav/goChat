@@ -3,8 +3,9 @@ package server
 import "net"
 
 // Guest struct (auxiliar for server).
-// Defines an username, and the guest connection
-// (golang's equivalent for sockets).
+// Defines an username, the guest connection,
+// an unic serial for identification, a hash table
+// for the chatrooms in which the guest is and a status.
 type Guest struct {
     serial int
     username   string

@@ -1,5 +1,10 @@
 package server
 
+
+// ChatRoom struct (auxiliar for server).
+// Defines a name, an owner guest,
+// a hash table for the guests who are in the chatRoom and a
+// a hash table for the invited guests.
 type ChatRoom struct {
     owner            Guest
     name             string
