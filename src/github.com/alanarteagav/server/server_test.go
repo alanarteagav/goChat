@@ -96,86 +96,86 @@ func TestMain(m *testing.M) {
 func TestNewGuest(t *testing.T) {
     testSerial := randomSerial()
     guest := NewGuest(testSerial, nil)
-    if guest.GetSerial() != testSerial {
+    if guest.getSerial() != testSerial {
         t.Error("TestNewGuest FAILED")
     }
-    if guest.GetUsername() != "" {
+    if guest.getUsername() != "" {
         t.Error("TestNewGuest FAILED")
     }
 }
 
 // Tests if the guest's username can be modified.
-func TestGuestSetGetUsername(t *testing.T) {
+func TestGuestSetgetUsername(t *testing.T) {
     guest := NewGuest(randomSerial(), nil)
     username := "TEST_USERNAME"
-    guest.SetUsername(username)
-    if guest.GetUsername() != username {
-        t.Error("TestGuestSetGetUsername FAILED")
+    guest.setUsername(username)
+    if guest.getUsername() != username {
+        t.Error("TestGuestSetgetUsername FAILED")
     }
 }
 
-func TestGuestSetGetStatus(t *testing.T) {
+func TestGuestSetgetStatus(t *testing.T) {
     guest := NewGuest(randomSerial(), nil)
-    guest.SetStatus(BUSY)
-    if guest.GetStatus() != BUSY {
-        t.Error("TestGuestSetGetStatus FAILED")
+    guest.setStatus(BUSY)
+    if guest.getStatus() != BUSY {
+        t.Error("TestGuestSetgetStatus FAILED")
     }
-    guest.SetStatus(AWAY)
-    if guest.GetStatus() != AWAY {
-        t.Error("TestGuestSetGetStatus FAILED")
+    guest.setStatus(AWAY)
+    if guest.getStatus() != AWAY {
+        t.Error("TestGuestSetgetStatus FAILED")
     }
-    guest.SetStatus(ACTIVE)
-    if guest.GetStatus() != ACTIVE {
-        t.Error("TestGuestSetGetStatus FAILED")
+    guest.setStatus(ACTIVE)
+    if guest.getStatus() != ACTIVE {
+        t.Error("TestGuestSetgetStatus FAILED")
     }
 }
 
 // Tests if the guest is in a ChatRoom.
-func TestGuestIsInChatroom(t *testing.T) {
+func TestGuestisInChatRoom(t *testing.T) {
     guest := NewGuest(randomSerial(), nil)
     chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
-    if guest.IsInChatRoom(*chatRoom) {
-        t.Error("TestGuestIsInChatroom FAILED")
+    if guest.isInChatRoom(*chatRoom) {
+        t.Error("TestGuestisInChatRoom FAILED")
     }
-    guest.JoinChatRoom(*chatRoom)
-    if !guest.IsInChatRoom(*chatRoom) {
-        t.Error("TestGuestIsInChatroom FAILED")
+    guest.joinChatRoom(*chatRoom)
+    if !guest.isInChatRoom(*chatRoom) {
+        t.Error("TestGuestisInChatRoom FAILED")
     }
 }
 
 // Tests if the guest can join a chatRoom.
-func TestGuestJoinChatroom(t *testing.T) {
+func TestGuestjoinChatRoom(t *testing.T) {
     guest := NewGuest(randomSerial(), nil)
     chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
-    guest.JoinChatRoom(*chatRoom)
-    if !guest.IsInChatRoom(*chatRoom) {
-        t.Error("TestGuestJoinChatroom FAILED")
+    guest.joinChatRoom(*chatRoom)
+    if !guest.isInChatRoom(*chatRoom) {
+        t.Error("TestGuestjoinChatRoom FAILED")
     }
 }
 
 // Tests if the guest can leave a chatRoom.
-func TestGuestLeaveChatroom(t *testing.T) {
+func TestGuestleaveChatRoom(t *testing.T) {
     guest := NewGuest(randomSerial(), nil)
     chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
-    guest.JoinChatRoom(*chatRoom)
-    guest.LeaveChatRoom(*chatRoom)
-    if guest.IsInChatRoom(*chatRoom) {
-        t.Error("TestGuestLeaveChatroom FAILED")
+    guest.joinChatRoom(*chatRoom)
+    guest.leaveChatRoom(*chatRoom)
+    if guest.isInChatRoom(*chatRoom) {
+        t.Error("TestGuestleaveChatRoom FAILED")
     }
 }
 
-func TestGuestEquals(t *testing.T) {
+func TestGuestequals(t *testing.T) {
     testSerial := randomSerial()
     guest := NewGuest(testSerial, nil)
-    guest.SetUsername("A")
+    guest.setUsername("A")
     guestA := NewGuest(testSerial, nil)
-    guestA.SetUsername("A")
+    guestA.setUsername("A")
     guestB := NewGuest(randomSerial(), nil)
-    guestB.SetUsername("B")
-    if guest.Equals(guestB) {
-        t.Error("TestGuestEquals FAILED")
-    } else if !guest.Equals(guestA) {
-        t.Error("TestGuestEquals FAILED")
+    guestB.setUsername("B")
+    if guest.equals(guestB) {
+        t.Error("TestGuestequals FAILED")
+    } else if !guest.equals(guestA) {
+        t.Error("TestGuestequals FAILED")
     }
 }
 
@@ -186,96 +186,96 @@ func TestNewChatRoom(t *testing.T) {
     name := "TEST_NAME"
     guest := NewGuest(randomSerial(), nil)
     chatRoom := NewChatRoom(*guest, name)
-    if !guest.Equals(chatRoom.GetOwner()) {
+    if !guest.equals(chatRoom.getOwner()) {
         t.Error("TestNewChatRoom FAILED")
-    } else if chatRoom.GetName() != name {
+    } else if chatRoom.getName() != name {
         t.Error("TestNewChatRoom FAILED")
-    } else if !chatRoom.Hosts(guest){
+    } else if !chatRoom.hosts(guest){
         t.Error("TestNewChatRoom FAILED")
-    }else if chatRoom.GetConnectionCount() != 1 {
+    }else if chatRoom.getConnectionCount() != 1 {
         t.Error("TestNewChatRoom FAILED")
     }
 }
 
 // Tests if the ChatRoom's username can be modified.
-func TestChatRoomSetGetName(t *testing.T) {
+func TestChatRoomSetgetName(t *testing.T) {
     nameA := "TEST_NAME_A"
     chatRoom := NewChatRoom(ownerGuest, nameA)
     nameB := "TEST_NAME_B"
-    chatRoom.SetName(nameB)
-    if chatRoom.GetName() != nameB {
-        t.Error("TestChatRoomSetGetUsername FAILED")
+    chatRoom.setName(nameB)
+    if chatRoom.getName() != nameB {
+        t.Error("TestChatRoomSetgetUsername FAILED")
     }
 }
 
 // Tests if the ChatRoom can accept a guest.
-func TestChatRoomAddInvitedGuest(t *testing.T) {
+func TestChatRoomaddInvitedGuest(t *testing.T) {
     chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     invitedGuest := NewGuest(randomSerial(), nil)
     notOwnerGuest := NewGuest(randomSerial(), nil)
-    if chatRoom.WasInvited(invitedGuest) {
-        t.Error("TestChatRoomAddInvitedGuest FAILED")
+    if chatRoom.wasInvited(invitedGuest) {
+        t.Error("TestChatRoomaddInvitedGuest FAILED")
     }
-    chatRoom.AddInvitedGuest(*notOwnerGuest, invitedGuest)
-    if chatRoom.WasInvited(invitedGuest) {
-        t.Error("TestChatRoomAddInvitedGuest FAILED")
+    chatRoom.addInvitedGuest(*notOwnerGuest, invitedGuest)
+    if chatRoom.wasInvited(invitedGuest) {
+        t.Error("TestChatRoomaddInvitedGuest FAILED")
     }
-    chatRoom.AddInvitedGuest(ownerGuest, invitedGuest)
-    if !chatRoom.WasInvited(invitedGuest) {
-        t.Error("TestChatRoomAddInvitedGuest FAILED")
+    chatRoom.addInvitedGuest(ownerGuest, invitedGuest)
+    if !chatRoom.wasInvited(invitedGuest) {
+        t.Error("TestChatRoomaddInvitedGuest FAILED")
     }
 }
 
 // Tests if the ChatRoom can accept a guest.
-func TestChatRoomAddGuest(t *testing.T) {
+func TestChatRoomaddGuest(t *testing.T) {
     chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     invitedGuest := NewGuest(randomSerial(), nil)
-    chatRoom.AddGuest(*invitedGuest)
-    if chatRoom.Hosts(invitedGuest) || chatRoom.GetConnectionCount() != 1 {
-        t.Error("TestChatRoomAddGuest FAILED")
+    chatRoom.addGuest(*invitedGuest)
+    if chatRoom.hosts(invitedGuest) || chatRoom.getConnectionCount() != 1 {
+        t.Error("TestChatRoomaddGuest FAILED")
     }
-    chatRoom.AddInvitedGuest(ownerGuest, invitedGuest)
-    chatRoom.AddGuest(*invitedGuest)
-    if !chatRoom.Hosts(invitedGuest) || chatRoom.GetConnectionCount() != 2 {
-        t.Error("TestChatRoomAddGuest FAILED")
+    chatRoom.addInvitedGuest(ownerGuest, invitedGuest)
+    chatRoom.addGuest(*invitedGuest)
+    if !chatRoom.hosts(invitedGuest) || chatRoom.getConnectionCount() != 2 {
+        t.Error("TestChatRoomaddGuest FAILED")
     }
 }
 
 // Tests the ChatRoom connection counter.
-func TestChatRoomGetConnectionCount(t *testing.T) {
+func TestChatRoomgetConnectionCount(t *testing.T) {
     chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     guestA := NewGuest(randomSerial(), nil)
     guestB := NewGuest(randomSerial(), nil)
-    chatRoom.AddInvitedGuest(ownerGuest, guestA)
-    chatRoom.AddInvitedGuest(ownerGuest, guestB)
-    chatRoom.AddGuest(*guestA)
-    chatRoom.AddGuest(*guestB)
-    if chatRoom.GetConnectionCount() != 3 {
-        t.Error("TestChatRoomGetConnectionCount FAILED")
+    chatRoom.addInvitedGuest(ownerGuest, guestA)
+    chatRoom.addInvitedGuest(ownerGuest, guestB)
+    chatRoom.addGuest(*guestA)
+    chatRoom.addGuest(*guestB)
+    if chatRoom.getConnectionCount() != 3 {
+        t.Error("TestChatRoomgetConnectionCount FAILED")
     }
 }
 
 // Tests if the ChatRoom can remove a guest.
-func TestChatRoomRemoveGuest(t *testing.T) {
+func TestChatRoomremoveGuest(t *testing.T) {
     chatRoom := NewChatRoom(ownerGuest, "TEST_CHATROOM")
     guestA := NewGuest(randomSerial(), nil)
     guestB := NewGuest(randomSerial(), nil)
-    chatRoom.AddInvitedGuest(ownerGuest, guestA)
-    chatRoom.AddInvitedGuest(ownerGuest, guestB)
-    chatRoom.AddGuest(*guestA)
-    chatRoom.AddGuest(*guestB)
-    chatRoom.RemoveGuest(*guestA)
-    if chatRoom.GetConnectionCount() != 2 {
-        t.Error("TestChatRoomRemoveGuest FAILED")
+    chatRoom.addInvitedGuest(ownerGuest, guestA)
+    chatRoom.addInvitedGuest(ownerGuest, guestB)
+    chatRoom.addGuest(*guestA)
+    chatRoom.addGuest(*guestB)
+    chatRoom.removeGuest(*guestA)
+    if chatRoom.getConnectionCount() != 2 {
+        t.Error("TestChatRoomremoveGuest FAILED")
     }
-    chatRoom.RemoveGuest(*guestB)
-    if chatRoom.GetConnectionCount() != 1 {
-        t.Error("TestChatRoomRemoveGuest FAILED")
+    chatRoom.removeGuest(*guestB)
+    if chatRoom.getConnectionCount() != 1 {
+        t.Error("TestChatRoomremoveGuest FAILED")
     }
 }
 
-func TestChatRoomEquals(t *testing.T) {
-    t.Error("TestChatRoomEquals FAILED")
+func TestChatRoomequals(t *testing.T) {
+    t.Error("TestChatRoomequals FAILED")
 }
 
 /* TESTS FOR THE SERVER STRUCT */

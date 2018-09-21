@@ -47,63 +47,59 @@ func NewGuest(serial int, connection net.Conn) *Guest {
 }
 
 // Returns guest's connection.
-func (guest Guest) GetConnection() net.Conn {
+func (guest Guest) getConnection() net.Conn {
     return guest.connection
 }
 
 // Returns guest's serial.
-func (guest Guest) GetSerial() int {
+func (guest Guest) getSerial() int {
     return guest.serial
 }
 
 // Returns guest's username.
-func (guest Guest) GetUsername() string {
+func (guest Guest) getUsername() string {
     return guest.username
 }
 
 // Returns guest's username.
-func (guest Guest) IsIdentified() bool {
+func (guest Guest) isIdentified() bool {
     return guest.username != ""
 }
 
 // Sets a new username for the guest.
-func (guest *Guest) SetUsername(username string) {
+func (guest *Guest) setUsername(username string) {
     guest.username = username
 }
 
-func (guest *Guest) SetStatus(status UserStatus) {
+func (guest *Guest) setStatus(status UserStatus) {
     guest.status = status
 }
 
 // Sets a new username for the guest.
-func (guest Guest) GetStatus() UserStatus {
+func (guest Guest) getStatus() UserStatus {
     return guest.status
 }
 
-func (guest Guest) JoinChatRoom(chatRoom ChatRoom) {
-    _, isInChatRooms := guest.chatRooms[chatRoom.GetName()]
+func (guest Guest) joinChatRoom(chatRoom ChatRoom) {
+    _, isInChatRooms := guest.chatRooms[chatRoom.getName()]
     if !isInChatRooms {
-        guest.chatRooms[chatRoom.GetName()] = chatRoom
+        guest.chatRooms[chatRoom.getName()] = chatRoom
     }
 }
 
-func (guest Guest) LeaveChatRoom(chatRoom ChatRoom) {
-    guestChatRoom, isInChatRooms := guest.chatRooms[chatRoom.GetName()]
+func (guest Guest) leaveChatRoom(chatRoom ChatRoom) {
+    guestChatRoom, isInChatRooms := guest.chatRooms[chatRoom.getName()]
     if isInChatRooms {
-        delete(guest.chatRooms, guestChatRoom.GetName())
+        delete(guest.chatRooms, guestChatRoom.getName())
     }
 }
 
-func (guest Guest) GetChatRooms() map[string]ChatRoom {
-    return nil
-}
-
-func (guest Guest) IsInChatRoom(chatRoom ChatRoom) bool {
-    _, isInChatRooms := guest.chatRooms[chatRoom.GetName()]
+func (guest Guest) isInChatRoom(chatRoom ChatRoom) bool {
+    _, isInChatRooms := guest.chatRooms[chatRoom.getName()]
     return isInChatRooms
 }
 
-func (guest Guest) Equals(g *Guest) bool {
+func (guest Guest) equals(g *Guest) bool {
     if guest.serial != g.serial {
         return false
     }

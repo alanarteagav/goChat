@@ -15,66 +15,66 @@ func NewChatRoom(owner Guest, name string) *ChatRoom {
     chatRoom.name = name
     chatRoom.guests = make(map[string]Guest)
     chatRoom.invitedGuests = make(map[string]Guest)
-    chatRoom.guests[owner.GetUsername()] = owner
+    chatRoom.guests[owner.getUsername()] = owner
     return chatRoom
 }
 
-func (chatRoom ChatRoom) GetOwner() *Guest {
+func (chatRoom ChatRoom) getOwner() *Guest {
     return &chatRoom.owner
 }
 
-func (chatRoom ChatRoom) GetName() string {
+func (chatRoom ChatRoom) getName() string {
     return chatRoom.name
 }
 
-func (chatRoom *ChatRoom) SetName(name string) {
+func (chatRoom *ChatRoom) setName(name string) {
     chatRoom.name = name
 }
 
-func (chatRoom ChatRoom) GetConnectionCount() int {
+func (chatRoom ChatRoom) getConnectionCount() int {
     return chatRoom.connectionCount
 }
 
-func (chatRoom ChatRoom) GetGuests() map[string]Guest {
+func (chatRoom ChatRoom) getGuests() map[string]Guest {
     return chatRoom.guests
 }
 
-func (chatRoom ChatRoom) Hosts(guest *Guest) bool {
-    if _, ok := chatRoom.guests[guest.GetUsername()]; ok{
+func (chatRoom ChatRoom) hosts(guest *Guest) bool {
+    if _, ok := chatRoom.guests[guest.getUsername()]; ok{
         return true
     }
     return false
 }
 
-func (chatRoom *ChatRoom) AddGuest(guest Guest) {
-    if chatRoom.WasInvited(&guest) {
+func (chatRoom *ChatRoom) addGuest(guest Guest) {
+    if chatRoom.wasInvited(&guest) {
         chatRoom.connectionCount++
-        chatRoom.guests[guest.GetUsername()] = guest
+        chatRoom.guests[guest.getUsername()] = guest
     }
 }
 
-func (chatRoom *ChatRoom) AddInvitedGuest(owner Guest, guest *Guest) bool {
-    if !chatRoom.owner.Equals(&owner) {
+func (chatRoom *ChatRoom) addInvitedGuest(owner Guest, guest *Guest) bool {
+    if !chatRoom.owner.equals(&owner) {
         return false
     } else {
-        chatRoom.invitedGuests[guest.GetUsername()] = *guest
+        chatRoom.invitedGuests[guest.getUsername()] = *guest
         return true
     }
 }
 
-func (chatRoom ChatRoom) WasInvited(guest *Guest) bool {
-    if _, ok := chatRoom.invitedGuests[guest.GetUsername()]; ok{
+func (chatRoom ChatRoom) wasInvited(guest *Guest) bool {
+    if _, ok := chatRoom.invitedGuests[guest.getUsername()]; ok{
         return true
     }
     return false
 }
 
-func (chatRoom *ChatRoom) RemoveGuest(guest Guest) {
+func (chatRoom *ChatRoom) removeGuest(guest Guest) {
     chatRoom.connectionCount--
-    delete(chatRoom.guests, guest.GetUsername())
+    delete(chatRoom.guests, guest.getUsername())
 }
 
-func (chatRoom *ChatRoom) Equals(cr *ChatRoom) bool {
+func (chatRoom *ChatRoom) equals(cr *ChatRoom) bool {
     if chatRoom.name != cr.name {
         return false
     } else if chatRoom.connectionCount != cr.connectionCount {
@@ -82,7 +82,7 @@ func (chatRoom *ChatRoom) Equals(cr *ChatRoom) bool {
     }
     for guestKey , guestsValue := range chatRoom.guests {
         guest := cr.guests[guestKey]
-        if !guest.Equals(&guestsValue) {
+        if !guest.equals(&guestsValue) {
             return false
         }
     }
