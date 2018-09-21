@@ -1,3 +1,17 @@
+/* Server package.
+
+ It provides a single exported method "Serve", and a constructor, that
+ allows to set up a server with a given port.
+
+ The package consists in three files related with the following
+ structs:
+
+ - Server (main struct)
+
+ - Guest (auxiliar struct)
+
+ - ChatRoom (auxiliar struct)
+*/
 package server
 
 import (
@@ -12,12 +26,16 @@ import (
     "strconv"
 )
 
+
+// Auxiliar function that returns an aleatory integer to temoparily
+// identify a new guest.
 func randomSerial() int {
     return rand.Int()
 }
 
 // Server struct.
-// Defines the server's port, and a dictionary of guests.
+// Defines the server's port, and hash tables for identified and
+// unidentified guests.
 type Server struct {
     port             int
     guestsById       map[int]Guest
@@ -35,11 +53,6 @@ func NewServer(port int) *Server {
     return server
 }
 
-// Returns server's port.
-func (server Server) GetPort() int {
-    return server.port
-}
-
 // Auxiliar function which listens strings from a connection.
 func listen(connection net.Conn) (string, error) {
     message, err := bufio.NewReader(connection).ReadString('\n')
@@ -52,7 +65,7 @@ func listen(connection net.Conn) (string, error) {
 
 // Server method, sends a message to a guest.
 func send(message string, guest Guest) {
-    guest.GetConnection().Write([]byte(message + "\n"))
+    guest.getConnection().Write([]byte(message + "\n"))
 }
 
 // Auxiliar function which send messages to all the guests in the
@@ -65,9 +78,10 @@ func (server Server) deliver(message string) {
     }
 }
 
+// Auxiliar function which send messages to all identified users.
 func (server Server) deliverToUsers(message string, sender Guest) {
     for _ , guest := range server.guestsByUsername {
-        if &guest != nil && guest.GetUsername() != sender.GetUsername() {
+        if &guest != nil && guest.getUsername() != sender.getUsername() {
             send(message, guest)
         }
     }
@@ -75,12 +89,13 @@ func (server Server) deliverToUsers(message string, sender Guest) {
 
 // Auxiliar method which listens strings from a guest.
 func (server Server) listen(guest *Guest) (string, error) {
-    message, err := bufio.NewReader(guest.GetConnection()).ReadString('\n')
+    message, err := bufio.NewReader(guest.getConnection()).ReadString('\n')
     if err != nil {
-        serialString := strconv.Itoa(guest.GetSerial())
+
+        serialString := strconv.Itoa(guest.getSerial())
         fmt.Println("[Client : " + serialString + " disconnected]")
-        delete(server.guestsByUsername, guest.GetUsername())
-        delete(server.guestsById, guest.GetSerial())
+        delete(server.guestsByUsername, guest.getUsername())
+        delete(server.guestsById, guest.getSerial())
         return "", errors.New("Client out")
     }
     message = strings.Trim(message, "\n")
@@ -107,8 +122,8 @@ func (server Server) handleConnection(guest *Guest)  {
                 if usernameAlreadyExists {
                     send("...USERNAME NOT AVAILABLE", *guest)
                 } else {
-                    delete(server.guestsByUsername, guest.GetUsername())
-                    guest.SetUsername(username)
+                    delete(server.guestsByUsername, guest.getUsername())
+                    guest.setUsername(username)
                     server.guestsByUsername[username] = *guest
                     send("...SUCCESFUL IDENTIFICATION", *guest)
                 }
@@ -116,19 +131,19 @@ func (server Server) handleConnection(guest *Guest)  {
         case string(events.PUBLICMESSAGE):
             if len(stringArray) < 2 {
                 send(string(events.INVALID), *guest)
-            } else if !guest.IsIdentified() {
+            } else if !guest.isIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
             } else {
                 stringToSend :=
                     strings.TrimPrefix(message, "PUBLICMESSAGE" + " ")
-                stringToSend = "...PUBLIC-" + guest.GetUsername() +
+                stringToSend = "...PUBLIC-" + guest.getUsername() +
                                ": " + stringToSend
                 server.deliverToUsers(stringToSend, *guest)
             }
         case string(events.MESSAGE):
             if len(stringArray) < 3 {
                 send(string(events.INVALID), *guest)
-            } else if !guest.IsIdentified() {
+            } else if !guest.isIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
             } else {
                 username := stringArray[1]
@@ -136,7 +151,7 @@ func (server Server) handleConnection(guest *Guest)  {
                     stringToSend :=
                     strings.TrimPrefix(
                         message, "MESSAGE" + " " + username + " ")
-                    stringToSend = guest.GetUsername() + ": " + stringToSend
+                    stringToSend = guest.getUsername() + ": " + stringToSend
                     send(stringToSend, guestInHash)
                     send("...MESSAGE SENT", *guest)
                 } else {
@@ -146,7 +161,7 @@ func (server Server) handleConnection(guest *Guest)  {
         case string(events.USERS):
             if len(stringArray) != 1 {
                 send(string(events.INVALID), *guest)
-            } else if !guest.IsIdentified() {
+            } else if !guest.isIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
             } else {
                 sendString := ""
@@ -159,13 +174,13 @@ func (server Server) handleConnection(guest *Guest)  {
         case string(events.STATUS):
             if len(stringArray) != 2 {
                 send(string(events.INVALID), *guest)
-            } else if !guest.IsIdentified() {
+            } else if !guest.isIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
             } else {
-                status := ToUserStatus(stringArray[1])
+                status := toUserStatus(stringArray[1])
                 if status != UNDEFINED {
-                    guest.SetStatus(status)
-                    send(guest.GetUsername() +  " " + string(guest.GetStatus()),
+                    guest.setStatus(status)
+                    send(guest.getUsername() +  " " + string(guest.getStatus()),
                         *guest)
                 } else {
                     send("...INVALID STATUS", *guest)
@@ -174,7 +189,7 @@ func (server Server) handleConnection(guest *Guest)  {
         case string(events.CREATEROOM):
             if len(stringArray) != 2 {
                 send(string(events.INVALID), *guest)
-            } else if !guest.IsIdentified() {
+            } else if !guest.isIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
             } else {
                 chatRoomName := stringArray[1]
@@ -185,7 +200,7 @@ func (server Server) handleConnection(guest *Guest)  {
         case string(events.INVITE):
             if len(stringArray) < 3 {
                 send(string(events.INVALID), *guest)
-            } else if !guest.IsIdentified() {
+            } else if !guest.isIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
             } else {
                 chatRoomName := stringArray[1]
@@ -193,10 +208,10 @@ func (server Server) handleConnection(guest *Guest)  {
                     stringArray = stringArray[2:]
                     for _, username := range stringArray {
                         if guestInHash, ok := server.guestsByUsername[username]; ok{
-                            if chatRoom.AddInvitedGuest(*guest, &guestInHash) {
+                            if chatRoom.addInvitedGuest(*guest, &guestInHash) {
                                 send("...INVITATION SENT TO " + username, *guest)
                                 send("...INVITATION TO JOIN " + chatRoomName +
-                                    " ROOM BY " + guest.GetUsername(),
+                                    " ROOM BY " + guest.getUsername(),
                                     guestInHash)
                             } else {
                                 send("...YOU ARE NOT THE OWNER OF THE ROOM",
@@ -212,13 +227,13 @@ func (server Server) handleConnection(guest *Guest)  {
         case string(events.JOINROOM):
             if len(stringArray) != 2 {
                 send(string(events.INVALID), *guest)
-            } else if !guest.IsIdentified() {
+            } else if !guest.isIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
             } else {
                 chatRoomName := stringArray[1]
                 if chatRoom, ok := server.chatRooms[chatRoomName]; ok{
-                    if chatRoom.WasInvited(guest){
-                       chatRoom.AddGuest(*guest)
+                    if chatRoom.wasInvited(guest){
+                       chatRoom.addGuest(*guest)
                        send("...SUCCESFULLY JOINED TO ROOM", *guest)
                     } else {
                         send("...YOU ARE NOT INVITED TO ROOM " + chatRoomName,
@@ -232,20 +247,20 @@ func (server Server) handleConnection(guest *Guest)  {
         case string(events.ROOMESSAGE):
             if len(stringArray) < 3 {
                 send(string(events.INVALID), *guest)
-            } else if !guest.IsIdentified() {
+            } else if !guest.isIdentified() {
                 send(string(events.IDENTIFY_ERROR), *guest)
             } else {
                 chatRoomName := stringArray[1]
                 if chatRoom, ok := server.chatRooms[chatRoomName]; ok{
-                    if chatRoom.Hosts(guest){
-                        for _ , chatRoomGuest := range chatRoom.GetGuests() {
+                    if chatRoom.hosts(guest){
+                        for _ , chatRoomGuest := range chatRoom.getGuests() {
                             stringToSend :=
                             strings.TrimPrefix(message, "ROOMESSAGE" +
                                                 " " + chatRoomName + " ")
                             stringToSend = "..." + chatRoomName + "-" +
-                                            guest.GetUsername() + ": " +
+                                            guest.getUsername() + ": " +
                                             stringToSend
-                            if !chatRoomGuest.Equals(guest) {
+                            if !chatRoomGuest.equals(guest) {
                                 send(stringToSend, chatRoomGuest)
                             } else {
                                 send("...MESSAGE SENT", *guest)
@@ -259,9 +274,9 @@ func (server Server) handleConnection(guest *Guest)  {
                 }
             }
         case string(events.DISCONNECT):
-            delete(server.guestsByUsername, guest.GetUsername())
-            delete(server.guestsById, guest.GetSerial())
-            guest.GetConnection().Close()
+            delete(server.guestsByUsername, guest.getUsername())
+            delete(server.guestsById, guest.getSerial())
+            guest.getConnection().Close()
             return
         default :
             send(string(events.INVALID), *guest)
@@ -269,7 +284,7 @@ func (server Server) handleConnection(guest *Guest)  {
     }
 }
 
-// Serves.
+// Method which sets up a server.
 func (server Server) Serve()  {
     listener, err := net.Listen("tcp", ":" + strconv.Itoa(server.port))
     if err != nil {

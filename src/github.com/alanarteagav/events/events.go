@@ -47,7 +47,6 @@ func ToChatEvent(str string) ChatEvent {
         return ROOMESSAGE
     case "PUBLICMESSAGE":
         return PUBLICMESSAGE
-
     case "ERROR":
         return ERROR
     default:
