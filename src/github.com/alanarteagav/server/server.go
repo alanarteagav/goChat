@@ -270,7 +270,7 @@ func (server Server) handleConnection(guest *Guest)  {
                         send("...YOU ARE NOT PART OF THE ROOM", *guest)
                     }
                 } else {
-                    send("...ROOM NOT EXISTS", *guest)
+                    send("...ROOM NOT EXIST", *guest)
                 }
             }
         case string(events.DISCONNECT):
