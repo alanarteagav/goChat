@@ -79,6 +79,7 @@ func (server Server) listen(guest *Guest) (string, error) {
     if err != nil {
         serialString := strconv.Itoa(guest.GetSerial())
         fmt.Println("[Client : " + serialString + " disconnected]")
+        delete(server.guestsByUsername, guest.GetUsername())
         delete(server.guestsById, guest.GetSerial())
         return "", errors.New("Client out")
     }
@@ -106,6 +107,7 @@ func (server Server) handleConnection(guest *Guest)  {
                 if usernameAlreadyExists {
                     send("...USERNAME NOT AVAILABLE", *guest)
                 } else {
+                    delete(server.guestsByUsername, guest.GetUsername())
                     guest.SetUsername(username)
                     server.guestsByUsername[username] = *guest
                     send("...SUCCESFUL IDENTIFICATION", *guest)
@@ -202,6 +204,9 @@ func (server Server) handleConnection(guest *Guest)  {
                             }
                         }
                     }
+                } else {
+                    send("...ROOM NOT EXISTS",
+                        *guest)
                 }
             }
         case string(events.JOINROOM):
@@ -254,8 +259,8 @@ func (server Server) handleConnection(guest *Guest)  {
                 }
             }
         case string(events.DISCONNECT):
-            delete(server.guestsById, guest.GetSerial())
             delete(server.guestsByUsername, guest.GetUsername())
+            delete(server.guestsById, guest.GetSerial())
             guest.GetConnection().Close()
             return
         default :
