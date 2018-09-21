@@ -43,7 +43,7 @@ go install ./...
 ```
 
 (you should also see the Gotk3 project Readme to see if you have
-its necessary dependencies installed on your computer, some
+the necessary dependencies installed on your computer, some
 of them are GTK+3, GDK 3, GLib 2 and Cairo).
 
 [Gotk3 Project Page](https://github.com/gotk3/gotk3)
