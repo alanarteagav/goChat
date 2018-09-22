@@ -216,7 +216,7 @@ func (controller *mainWindowController) connect(
 
     address, addressError := loginController.GetAddress()
     port, portError := loginController.GetPort()
-    username, _ := loginController.GetUsername()
+    username, usernameError := loginController.GetUsername()
 
     if addressError && portError {
         dialogObject, err := dialogBuilder.GetObject(INFO_DIALOG)
@@ -243,6 +243,13 @@ func (controller *mainWindowController) connect(
             gtk.MessageDialogNew(nil, gtk.DIALOG_MODAL,
                                  gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
                                 "Enter valid port (bigger than 1024)\n" +
+                                "Press ESC to close.")
+        infoDialog.Show()
+    } else if usernameError {
+        infoDialog :=
+            gtk.MessageDialogNew(nil, gtk.DIALOG_MODAL,
+                                 gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
+                                "Enter valid username\n" +
                                 "Press ESC to close.")
         infoDialog.Show()
     } else {
