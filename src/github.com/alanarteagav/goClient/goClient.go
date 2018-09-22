@@ -1,3 +1,4 @@
+// Main file for goClient program.
 package main
 
 import (

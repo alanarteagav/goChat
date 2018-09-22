@@ -34,6 +34,18 @@ and then run this command:
 ```
 go get ./...
 ```
+### Warning
+Some Gotk3 project files are defective and prevent goChat from complying properly, so it is necessary to remove them, that can be done removing the following files:
+
+ - goChat/src/github.com/gotk3/gotk3/gtk/gtk_since_3_20.go
+ - goChat//src/github.com/gotk3/gotk3/gtk/shortcutswindow_since_3_22.go
+ - goChat/src/github.com/gotk3/gotk3/gtk/menu_since_3_22.go
+
+Or running the bash script "build.sh" included in the project using the command
+```
+. build.sh
+```
+
 
 ## Building goChat
 

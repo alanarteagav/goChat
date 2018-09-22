@@ -44,7 +44,6 @@ then
 else
     echo "not removing menu_since_3_22.go (BAD FILE 3)"
 fi
-#go build -o ./src/github.com/alanarteagav/goClient/client.so -buildmode=c-shared ./src/github.com/alanarteagav/client/client.go
+
 go build ./...
 go install ./...
-#gcc -o bin/goClientC ./src/github.com/alanarteagav/goClient/gtkClient.c -Wall `pkg-config --cflags --libs gtk+-3.0` -export-dynamic
