@@ -90,5 +90,5 @@ func (client Client) Listen() (string, error) {
 // SendMessage method.
 // Receives a string and sends it through the client's connection.
 func (client Client) SendMessage(message string)  {
-    client.connection.Write([]byte(message))
+    client.connection.Write([]byte(message + "\n"))
 }
