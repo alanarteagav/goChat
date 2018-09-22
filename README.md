@@ -67,7 +67,7 @@ Once you are in the goChat directory, simply run this command:
 go test ./...
 ```
 
-alternatively, you can test the server an client files with the following commands (Once you are in the goChat directory):
+alternatively, you can test the server and client files with the following commands (once you are in the goChat directory):
 ```
 cd src/github.com/alanarteagav/server/
 go test
