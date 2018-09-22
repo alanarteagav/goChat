@@ -523,7 +523,7 @@ func TestROOMESSAGE(t *testing.T) {
     }
     clientA.sendMessage("ROOMESSAGE DeathStar message")
     receivedMessage = strings.Trim(clientA.getMessage(), "\n")
-    if receivedMessage != "...ROOM NOT EXISTS" {
+    if receivedMessage != "...ROOM NOT EXIST" {
         t.Error("TestROOMESSAGE FAILED")
     }
     client.sendMessage("IDENTIFY Palpatine")
