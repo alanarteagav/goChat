@@ -8,7 +8,7 @@ import (
     "log"
     "bufio"
     "strconv"
-    //"strings"
+    "strings"
     "math/rand"
 )
 
@@ -82,7 +82,7 @@ func TestMain(m *testing.M) {
 // Tests client constructor.
 func TestNewClient(t *testing.T) {
     username := "NAME"
-    client := NewClient(username, "localhost", port)
+    client := NewClient(username)
     if username != client.GetUsername(){
         t.Error("TestNewClient FAILED")
     }
@@ -91,7 +91,7 @@ func TestNewClient(t *testing.T) {
 // Tests if the client's username can be modified.
 func TestSetGetUsername(t *testing.T) {
     username := "NAME"
-    client := NewClient(username, "localhost", port)
+    client := NewClient(username)
     newUsername := "NEW_NAME"
     client.SetUsername(newUsername)
     if newUsername != client.GetUsername(){
@@ -99,13 +99,16 @@ func TestSetGetUsername(t *testing.T) {
     }
 }
 
-/*
 // Tests if the client receives messages from the server.
 func TestListen(t *testing.T) {
-    message := "LISTEN!"
-    senderClient := NewClient("", "localhost", port)
+    message := "LISTEN"
+    senderClient := NewClient("")
+    senderClient.Connect("localhost", aleatoryPort())
     senderClient.SendMessage(message)
-    echo := Listen(senderClient.GetConnection())
+    echo, err := senderClient.Listen()
+    if err != nil {
+        t.Error("TestListen FAILED")
+    }
     echo = strings.Trim(message, "\n")
     if echo != message {
         t.Error("TestListen FAILED")
@@ -115,13 +118,16 @@ func TestListen(t *testing.T) {
 
 // Tests if the client sends messages to the server.
 func TestSendMessage(t *testing.T) {
-    client := NewClient("", "localhost", port)
+    client := NewClient("")
     message := "SHAZAM!"
+    client.Connect("localhost", aleatoryPort())
     client.SendMessage(message)
-    echo := Listen(client.GetConnection())
+    echo, err := client.Listen()
+    if err != nil {
+        t.Error("TestSendMessage FAILED")
+    }
     echo = strings.Trim(echo, "\n")
     if message != echo {
         t.Error("TestSendMessage FAILED")
     }
 }
-*/

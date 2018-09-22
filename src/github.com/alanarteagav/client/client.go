@@ -29,7 +29,7 @@ func NewClient(username string) *Client {
     return client
 }
 
-
+// Connects to an specific address and port.
 func (client *Client) Connect(ipAddress string, port int) error {
 
     success := make(chan net.Conn)

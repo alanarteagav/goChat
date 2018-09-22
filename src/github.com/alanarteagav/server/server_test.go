@@ -274,9 +274,6 @@ func TestChatRoomremoveGuest(t *testing.T) {
     }
 }
 
-func TestChatRoomequals(t *testing.T) {
-    t.Error("TestChatRoomequals FAILED")
-}
 
 /* TESTS FOR THE SERVER STRUCT */
 
