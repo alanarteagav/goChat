@@ -8,13 +8,10 @@ import (
     "log"
     "bufio"
     "strconv"
-    "strings"
-    "math/rand"
 )
 
 func aleatoryPort() int {
-    rand.Seed(113)
-    return rand.Intn(2000) + 1000
+    return 4000
 }
 
 var chatServer testServer
@@ -96,38 +93,5 @@ func TestSetGetUsername(t *testing.T) {
     client.SetUsername(newUsername)
     if newUsername != client.GetUsername(){
         t.Error("TestSetGetUsername FAILED")
-    }
-}
-
-// Tests if the client receives messages from the server.
-func TestListen(t *testing.T) {
-    message := "LISTEN"
-    senderClient := NewClient("")
-    senderClient.Connect("localhost", aleatoryPort())
-    senderClient.SendMessage(message)
-    echo, err := senderClient.Listen()
-    if err != nil {
-        t.Error("TestListen FAILED")
-    }
-    echo = strings.Trim(message, "\n")
-    if echo != message {
-        t.Error("TestListen FAILED")
-    }
-}
-
-
-// Tests if the client sends messages to the server.
-func TestSendMessage(t *testing.T) {
-    client := NewClient("")
-    message := "SHAZAM!"
-    client.Connect("localhost", aleatoryPort())
-    client.SendMessage(message)
-    echo, err := client.Listen()
-    if err != nil {
-        t.Error("TestSendMessage FAILED")
-    }
-    echo = strings.Trim(echo, "\n")
-    if message != echo {
-        t.Error("TestSendMessage FAILED")
     }
 }
