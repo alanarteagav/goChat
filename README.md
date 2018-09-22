@@ -113,4 +113,5 @@ address:
 http://localhost:8080/pkg/github.com/alanarteagav/
 ```
 (you can also click in the following link )
-[goChat documentation](http://localhost:8080/pkg/github.com/alanarteagav/)
+[goChat documentation (unexported)](http://localhost:8080/pkg/github.com/alanarteagav/?m=all)
+[goChat documentation (general)](http://localhost:8080/pkg/github.com/alanarteagav/)
