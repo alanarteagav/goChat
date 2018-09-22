@@ -71,7 +71,7 @@ go test ./...
 
 If you are in the goChat directory, run:
 ```
-./bin/goServer
+./bin/goServer port
 ```
 to run the server.
 
@@ -80,6 +80,23 @@ And:
 ./bin/goClient
 ```
 to run the client.
+
+
+## goClient use
+
+Type any line in the text entry to send a public message to the global
+chat, and type
+```
+@user (your message here)
+```
+to send a private message to a specific user.
+
+And:
+```
+#chatroom (your message here)
+```
+to send a message to a specific chatroom.
+
 
 ## Generating Documentation
 
